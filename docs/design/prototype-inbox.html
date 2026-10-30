@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Prototipe Inbox (throwaway)</title>
+<style>
+:root{
+  --bg:#eef0f3; --panel:#fff; --line:#e6e8ec; --ink:#14161a; --muted:#6b7280; --faint:#9aa1ad;
+  --sel:#f3f4f6; --accent:#14161a; --accent-ink:#fff; --chip:#f1f3f5; --ok:#16a34a; --warn:#d97706;
+}
+@media (prefers-color-scheme:dark){
+  :root{--bg:#0e0f12; --panel:#16181c; --line:#262a31; --ink:#eceef2; --muted:#9aa1ad; --faint:#6b7280;
+    --sel:#1e2127; --accent:#eceef2; --accent-ink:#14161a; --chip:#20242a;}
+}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0}
+body{background:var(--bg);color:var(--ink);font:14px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;padding:16px}
+.app{height:calc(100vh - 32px);background:var(--panel);border-radius:18px;border:1px solid var(--line);display:flex;flex-direction:column;overflow:hidden;box-shadow:0 8px 30px rgba(0,0,0,.06)}
+.banner{background:var(--warn);color:#fff;font-size:12px;text-align:center;padding:4px 8px}
+.top{display:flex;align-items:center;gap:12px;padding:14px 20px;border-bottom:1px solid var(--line);flex-wrap:wrap}
+.logo{width:36px;height:36px;border-radius:10px;background:var(--accent);color:var(--accent-ink);display:grid;place-items:center;font-weight:700}
+.addr{display:flex;align-items:center;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--panel)}
+.addr input{border:0;outline:0;padding:9px 10px;width:170px;background:transparent;color:var(--ink);font:inherit}
+.addr span{padding:0 12px 0 0;color:var(--muted)}
+button{font:inherit;cursor:pointer;border:1px solid var(--line);background:var(--panel);color:var(--ink);border-radius:10px;padding:8px 13px}
+button:hover{background:var(--sel)}
+button.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+button.primary:hover{opacity:.88}
+button:disabled{opacity:.45;cursor:not-allowed}
+.spacer{flex:1}
+.badge{font-size:12px;color:var(--muted);background:var(--chip);padding:5px 10px;border-radius:999px}
+.tabs{display:flex;gap:6px;padding:10px 20px;border-bottom:1px solid var(--line);overflow-x:auto}
+.tab{display:flex;align-items:center;gap:6px;border:0;background:transparent;color:var(--muted);padding:7px 12px;border-radius:10px;white-space:nowrap}
+.tab.on{background:var(--chip);color:var(--ink);font-weight:600}
+.tab small{background:var(--line);border-radius:999px;padding:0 7px;font-size:11px}
+.soon{font-size:10px;background:var(--chip);color:var(--faint);padding:1px 6px;border-radius:6px}
+.main{flex:1;display:flex;gap:16px;padding:16px 20px;min-height:0}
+.list{width:360px;flex:none;border:1px solid var(--line);border-radius:14px;display:flex;flex-direction:column;min-height:0}
+.list-h{display:flex;align-items:center;gap:8px;padding:10px 12px;border-bottom:1px solid var(--line)}
+.list-h input{flex:1;border:0;outline:0;background:transparent;color:var(--ink);font:inherit}
+.items{overflow:auto;flex:1}
+.item{display:flex;gap:10px;padding:12px;border-bottom:1px solid var(--line);cursor:pointer}
+.item:hover,.item.on{background:var(--sel)}
+.av{width:36px;height:36px;border-radius:50%;flex:none;display:grid;place-items:center;color:#fff;font-weight:700;font-size:13px}
+.im{min-width:0;flex:1}
+.row1{display:flex;justify-content:space-between;gap:8px}
+.name{font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.time{font-size:12px;color:var(--muted);flex:none}
+.sub{color:var(--muted);font-size:12.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.prev{color:var(--ink);font-size:13px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.item.read .name{font-weight:500}
+.item.read .prev,.item.read .time{color:var(--faint)}
+.dot{width:8px;height:8px;border-radius:50%;background:#3b82f6;display:inline-block;margin-right:6px}
+.detail{flex:1;border:1px solid var(--line);border-radius:14px;overflow:auto;min-width:0}
+.d-bar{display:flex;gap:6px;padding:10px 16px;border-bottom:1px solid var(--line);align-items:center}
+.d-bar button{padding:6px 10px}
+.d-body{padding:20px 24px;max-width:820px}
+.d-from{display:flex;gap:12px;align-items:center}
+h1{font-size:21px;margin:18px 0 12px}
+.chips{display:flex;gap:8px;flex-wrap:wrap;margin:6px 0 14px}
+.chip{display:flex;gap:8px;align-items:center;background:var(--chip);border-radius:10px;padding:6px 6px 6px 12px;font-size:13px}
+.chip b{font-family:ui-monospace,Consolas,monospace;letter-spacing:1px}
+.chip button{padding:3px 9px;font-size:12px}
+.vt{display:flex;gap:4px;margin:10px 0}
+.vt button{padding:4px 11px;font-size:12.5px}
+.vt button.on{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+iframe{width:100%;border:1px solid var(--line);border-radius:10px;min-height:230px;background:#fff}
+pre{white-space:pre-wrap;word-break:break-word;background:var(--chip);border-radius:10px;padding:12px;font:12.5px ui-monospace,Consolas,monospace;margin:0}
+.att{display:flex;gap:10px;flex-wrap:wrap;margin-top:16px}
+.att div{border:1px solid var(--line);background:var(--chip);border-radius:10px;padding:9px 14px;font-size:13px}
+.att small{display:block;color:var(--muted)}
+.empty{height:100%;display:grid;place-items:center;text-align:center;color:var(--muted);padding:30px}
+.toast{position:fixed;right:24px;bottom:24px;background:var(--accent);color:var(--accent-ink);padding:10px 16px;border-radius:10px;opacity:0;transform:translateY(8px);transition:.25s;pointer-events:none}
+.toast.show{opacity:1;transform:none}
+dialog{border:1px solid var(--line);border-radius:14px;background:var(--panel);color:var(--ink);padding:22px;width:320px}
+dialog::backdrop{background:rgba(0,0,0,.4)}
+dialog input{width:100%;padding:9px 10px;margin:10px 0;border:1px solid var(--line);border-radius:10px;background:var(--panel);color:var(--ink);font:inherit}
+.err{color:#dc2626;font-size:12.5px;min-height:18px}
+@media (max-width:820px){
+  body{padding:0}.app{height:100vh;border-radius:0;border:0}
+  .main{padding:10px}.list{width:100%}.detail{display:none}
+  .app.reading .list{display:none}.app.reading .detail{display:block}
+  .back{display:inline-block!important}
+}
+.back{display:none}
+</style>
+</head>
+<body>
+<div class="app" id="app">
+  <div class="banner">PROTOTIPE SEMENTARA (throwaway) — data hanya contoh, belum ada server sungguhan</div>
+
+  <div class="top">
+    <div class="logo">@</div>
+    <div class="addr"><input id="nameIn" value="dev-test" aria-label="Nama inbox" spellcheck="false"><span>@domainanda.com</span></div>
+    <button class="primary" id="openBtn">Buka inbox</button>
+    <button id="lockBtn">🔓 Kunci dengan kata sandi</button>
+    <div class="spacer"></div>
+    <span class="badge" id="retention">Disimpan 30 hari</span>
+    <button id="simBtn" title="Simulasi email baru masuk">＋ Simulasi email masuk</button>
+    <button disabled title="Fitur dua arah menyusul">✎ Tulis <span class="soon">segera hadir</span></button>
+  </div>
+
+  <div class="tabs" id="tabs"></div>
+
+  <div class="main">
+    <div class="list">
+      <div class="list-h">
+        <span>🔍</span><input id="q" placeholder="Cari pengirim, subjek, isi…">
+        <button id="refresh" title="Muat ulang">⟳</button>
+      </div>
+      <div class="items" id="items"></div>
+    </div>
+    <div class="detail" id="detail"></div>
+  </div>
+</div>
+
+<dialog id="dlg">
+  <form method="dialog" id="dlgForm">
+    <b id="dlgTitle"></b>
+    <input type="password" id="dlgPass" placeholder="Kata sandi" autocomplete="off">
+    <div class="err" id="dlgErr"></div>
+    <div style="display:flex;gap:8px;justify-content:flex-end">
+      <button type="button" id="dlgCancel">Batal</button>
+      <button class="primary" id="dlgOk" value="ok">Lanjut</button>
+    </div>
+  </form>
+</dialog>
+<div class="toast" id="toast"></div>
+
+<script>
+const $ = s => document.querySelector(s);
+const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const COLORS = ['#6366f1','#ef4444','#f59e0b','#10b981','#0ea5e9','#8b5cf6','#ec4899'];
+const colorOf = s => COLORS[[...s].reduce((a,c)=>a+c.charCodeAt(0),0) % COLORS.length];
+
+let seq = 100;
+const mk = (name, addr, subject, text, mins, extra={}) => ({
+  id: ++seq, name, addr, subject, text,
+  html: extra.html || `<div style="font-family:Arial,sans-serif;padding:16px"><h3>${esc(subject)}</h3>${text.split('\n').map(l=>`<p>${esc(l)}</p>`).join('')}</div>`,
+  headers: `From: ${name} <${addr}>\nTo: dev-test@domainanda.com\nSubject: ${subject}\nDate: ${new Date(Date.now()-mins*60000).toUTCString()}\nMessage-ID: <${seq}.${Math.random().toString(36).slice(2,8)}@mail.example>\nMIME-Version: 1.0\nContent-Type: text/html; charset=utf-8\nReceived-SPF: pass\nDKIM-Signature: v=1; a=rsa-sha256; d=${addr.split('@')[1]}`,
+  at: Date.now()-mins*60000, unread: true, fav: false, deleted: false, att: extra.att || []
+});
+
+const TEMPLATES = [
+  () => mk('Acme App','no-reply@acme.app','Kode verifikasi Anda','Halo,\nKode verifikasi Anda adalah 482913.\nKode berlaku selama 10 menit.\nJika bukan Anda, abaikan email ini.',0),
+  () => mk('Acme App','no-reply@acme.app','Konfirmasi alamat email','Selamat datang!\nKlik tautan berikut untuk mengaktifkan akun:\nhttps://acme.app/verify?token=9f2c1a7be4\nTautan berlaku 24 jam.',0),
+  () => mk('Toko Contoh','billing@tokocontoh.id','Invoice #INV-2041','Terima kasih atas pesanan Anda.\nTotal tagihan: Rp 250.000.\nInvoice terlampir.',0,{att:[{n:'invoice-2041.pdf',s:'184 KB'}]}),
+  () => mk('Acme App','security@acme.app','Reset kata sandi','Kami menerima permintaan reset kata sandi.\nGunakan tautan ini:\nhttps://acme.app/reset?code=771204\nAbaikan jika bukan Anda.',0),
+];
+
+const DB = {
+  'dev-test': { locked:false, pass:'', emails:[
+    mk('Acme App','no-reply@acme.app','Kode verifikasi Anda','Halo,\nKode verifikasi Anda adalah 628140.\nKode berlaku selama 10 menit.',4),
+    mk('Deel Support','alicia@deel.support','Penarikan dana Anda sudah diproses','Halo Rico,\nPenarikan dana Anda sudah selesai dan sedang dalam perjalanan ke rekening Anda.',55,{att:[{n:'bukti-transfer.pdf',s:'96 KB'}]}),
+    mk('Substack','read@substack.com','Riset sebagai aktivitas santai','Riset sebagai aktivitas santai, titik balik matahari, dan hal-hal menyenangkan lain.\nBaca selengkapnya:\nhttps://substack.com/p/contoh',180),
+    mk('Mobbin','jiho@mobbin.com','Percobaan gratis 6 bulan','Hanya pengingat bahwa penawaran percobaan gratis Anda segera berakhir.',1500),
+    mk('Netflix','info@account.netflix.com','Verifikasi nomor telepon','Nomor telepon Anda sudah ditambahkan dan diverifikasi.',2900),
+  ]}
+};
+DB['dev-test'].emails.forEach((e,i)=>{ if(i>=3) e.unread=false; });
+
+let cur = 'dev-test', folder = 'inbox', selId = null, view = 'html', query = '';
+
+function fmtTime(t){
+  const m = Math.round((Date.now()-t)/60000);
+  if(m<1) return 'baru saja';
+  if(m<60) return m+' mnt';
+  if(m<1440) return Math.round(m/60)+' jam';
+  return Math.round(m/1440)+' hari';
+}
+function toast(msg){ const t=$('#toast'); t.textContent=msg; t.classList.add('show'); clearTimeout(toast.t); toast.t=setTimeout(()=>t.classList.remove('show'),1800); }
+
+function box(){ return DB[cur]; }
+function visible(){
+  const q = query.toLowerCase();
+  return box().emails.filter(e=>{
+    if(folder==='inbox' && e.deleted) return false;
+    if(folder==='fav' && (!e.fav || e.deleted)) return false;
+    if(folder==='trash' && !e.deleted) return false;
+    return !q || (e.name+e.addr+e.subject+e.text).toLowerCase().includes(q);
+  }).sort((a,b)=>b.at-a.at);
+}
+
+function renderTabs(){
+  const em = box().emails;
+  const n = f => em.filter(e=> f==='inbox'?!e.deleted : f==='fav'?(e.fav&&!e.deleted) : e.deleted).length;
+  const t = (id,l,count) => `<button class="tab ${folder===id?'on':''}" data-f="${id}">${l}${count!=null?` <small>${count}</small>`:''}</button>`;
+  $('#tabs').innerHTML =
+    t('inbox','📥 Kotak masuk',n('inbox')) + t('fav','☆ Favorit',n('fav')) + t('trash','🗑 Dihapus',n('trash')) +
+    `<button class="tab" disabled>➤ Terkirim <span class="soon">segera hadir</span></button>` +
+    `<button class="tab" disabled>📄 Draf <span class="soon">segera hadir</span></button>`;
+  document.querySelectorAll('.tab[data-f]').forEach(b=>b.onclick=()=>{folder=b.dataset.f;selId=null;render();});
+}
+
+function renderList(){
+  const list = visible();
+  if(!list.length){
+    $('#items').innerHTML = `<div class="empty">${box().emails.length? 'Tidak ada email di sini.' : 'Inbox ini masih kosong.<br>Kirim email ke <b>'+esc(cur)+'@domainanda.com</b><br>atau pakai tombol “Simulasi email masuk”.'}</div>`;
+    return;
+  }
+  $('#items').innerHTML = list.map(e=>`
+    <div class="item ${e.unread?'':'read'} ${e.id===selId?'on':''}" data-id="${e.id}">
+      <div class="av" style="background:${colorOf(e.name)}">${esc(e.name[0].toUpperCase())}</div>
+      <div class="im">
+        <div class="row1"><span class="name">${e.unread?'<i class="dot"></i>':''}${esc(e.name)}</span><span class="time">${fmtTime(e.at)}</span></div>
+        <div class="sub">${esc(e.addr)}</div>
+        <div class="prev">${esc(e.subject)} — ${esc(e.text.replace(/\n/g,' '))}</div>
+      </div>
+    </div>`).join('');
+  document.querySelectorAll('.item').forEach(el=>el.onclick=()=>{selId=+el.dataset.id;view='html';const e=find(selId);e.unread=false;$('#app').classList.add('reading');render();});
+}
+const find = id => box().emails.find(e=>e.id===id);
+
+function renderDetail(){
+  const e = selId && find(selId);
+  if(!e){ $('#detail').innerHTML = `<div class="empty">Pilih email untuk membacanya.<br>Kode OTP dan tautan verifikasi akan terdeteksi otomatis.</div>`; return; }
+  const otp = (e.text.match(/\b\d{6}\b/)||[])[0];
+  const link = (e.text.match(/https?:\/\/\S+/)||[])[0];
+  const chips = (otp?`<div class="chip">Kode terdeteksi <b>${otp}</b><button data-copy="${otp}">Salin</button></div>`:'') +
+                (link?`<div class="chip">Tautan <span style="max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(link)}</span><button data-copy="${esc(link)}">Salin</button></div>`:'');
+  const body = view==='html' ? `<iframe sandbox srcdoc="${esc(e.html)}"></iframe>`
+             : view==='text' ? `<pre>${esc(e.text)}</pre>` : `<pre>${esc(e.headers)}</pre>`;
+  $('#detail').innerHTML = `
+    <div class="d-bar">
+      <button class="back" id="back">← Kembali</button>
+      <button id="favB">${e.fav?'★ Favorit':'☆ Favorit'}</button>
+      <button id="unreadB">Tandai belum dibaca</button>
+      <button id="delB">${e.deleted?'Pulihkan':'🗑 Hapus'}</button>
+      <button disabled title="Menyusul">↩ Balas <span class="soon">segera hadir</span></button>
+    </div>
+    <div class="d-body">
+      <div class="d-from"><div class="av" style="background:${colorOf(e.name)}">${esc(e.name[0].toUpperCase())}</div>
+        <div><b>${esc(e.name)}</b><div class="sub">Dari: ${esc(e.addr)} · ${fmtTime(e.at)} lalu</div></div></div>
+      <h1>${esc(e.subject)}</h1>
+      ${chips?`<div class="chips">${chips}</div>`:''}
+      <div class="vt">${['html','text','header'].map(v=>`<button data-v="${v}" class="${view===v?'on':''}">${{html:'HTML',text:'Teks',header:'Header'}[v]}</button>`).join('')}</div>
+      ${body}
+      ${e.att.length?`<div class="att">${e.att.map(a=>`<div>📎 ${esc(a.n)}<small>${esc(a.s)}</small></div>`).join('')}</div>`:''}
+    </div>`;
+  $('#back') && ($('#back').onclick=()=>{$('#app').classList.remove('reading');});
+  $('#favB').onclick=()=>{e.fav=!e.fav;render();};
+  $('#unreadB').onclick=()=>{e.unread=true;selId=null;$('#app').classList.remove('reading');render();};
+  $('#delB').onclick=()=>{e.deleted=!e.deleted;selId=null;$('#app').classList.remove('reading');render();toast(e.deleted?'Dipindah ke Dihapus':'Dipulihkan');};
+  document.querySelectorAll('[data-v]').forEach(b=>b.onclick=()=>{view=b.dataset.v;renderDetail();});
+  document.querySelectorAll('[data-copy]').forEach(b=>b.onclick=()=>{
+    const v=b.dataset.copy;
+    (navigator.clipboard?navigator.clipboard.writeText(v):Promise.reject()).then(()=>toast('Disalin'),()=>toast('Salin manual: '+v));
+  });
+}
+
+function render(){
+  $('#lockBtn').textContent = box().locked ? '🔒 Terkunci (klik untuk lepas kunci)' : '🔓 Kunci dengan kata sandi';
+  renderTabs(); renderList(); renderDetail();
+}
+
+/* dialog kata sandi */
+function ask(title, {confirm=false, check}={}){
+  return new Promise(res=>{
+    const d=$('#dlg'); $('#dlgTitle').textContent=title; $('#dlgPass').value=''; $('#dlgErr').textContent='';
+    let done=false;
+    const finish=v=>{ if(done) return; done=true; d.close(); res(v); };
+    $('#dlgCancel').onclick=()=>finish(null);
+    d.oncancel=()=>finish(null);
+    $('#dlgForm').onsubmit=ev=>{
+      ev.preventDefault();
+      const v=$('#dlgPass').value;
+      if(!v){ $('#dlgErr').textContent='Kata sandi tidak boleh kosong.'; return; }
+      if(check && !check(v)){ $('#dlgErr').textContent='Kata sandi salah.'; return; }
+      finish(v);
+    };
+    d.showModal(); $('#dlgPass').focus();
+  });
+}
+
+async function openInbox(){
+  const name = $('#nameIn').value.trim().toLowerCase().replace(/[^a-z0-9._-]/g,'');
+  if(!name){ toast('Isi nama inbox dulu'); return; }
+  $('#nameIn').value = name;
+  const b = DB[name];
+  if(b && b.locked){
+    const ok = await ask('Inbox “'+name+'” terkunci', {check:v=>v===b.pass});
+    if(ok===null){ $('#nameIn').value=cur; return; }
+  }
+  if(!DB[name]) DB[name]={locked:false,pass:'',emails:[]};
+  cur=name; folder='inbox'; selId=null; query=''; $('#q').value=''; $('#app').classList.remove('reading');
+  render();
+}
+
+$('#openBtn').onclick=openInbox;
+$('#nameIn').onkeydown=e=>{ if(e.key==='Enter') openInbox(); };
+$('#q').oninput=e=>{query=e.target.value;renderList();};
+$('#refresh').onclick=()=>{render();toast('Diperbarui');};
+$('#simBtn').onclick=()=>{
+  const e=TEMPLATES[Math.floor(Math.random()*TEMPLATES.length)](); e.at=Date.now();
+  box().emails.unshift(e); render(); toast('Email baru masuk: '+e.subject);
+};
+$('#lockBtn').onclick=async()=>{
+  const b=box();
+  if(b.locked){
+    const ok=await ask('Masukkan kata sandi untuk melepas kunci',{check:v=>v===b.pass});
+    if(ok!==null){ b.locked=false; b.pass=''; toast('Kunci dilepas'); }
+  } else {
+    const p=await ask('Buat kata sandi untuk “'+cur+'”');
+    if(p!==null){ b.locked=true; b.pass=p; toast('Inbox terkunci (hanya simulasi)'); }
+  }
+  render();
+};
+
+render();
+</script>
+</body>
+</html>
