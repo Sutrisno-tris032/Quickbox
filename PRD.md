@@ -1,10 +1,11 @@
-# PRD: Layanan Inbox Email Sementara untuk Developer (Open Source)
+# PRD: Layanan Inbox Email Sementara untuk Developer (Open Source) - Quick-Box
 
-> **Status:** Draf 1, 2026-10-30. Nama proyek: *belum ditentukan* (sementara disebut "proyek ini").
-> **Cara membaca dokumen ini:** setiap keputusan diberi label.
+> **Status:** Draf 2 (Diselaraskan dengan Keputusan Arsitektur & Roadmap), 2026-11-09.  
+> **Nama proyek:** **Quick-Box** (Quickbox) [Keputusan].  
+> **Cara membaca dokumen ini:** setiap keputusan diberi label:
 > - **[Keputusan]** sudah diputuskan oleh pemilik proyek.
 > - **[Usulan]** pilihan awal yang diusulkan, boleh diubah lewat diskusi tim.
-> - **[Terbuka]** belum diputuskan, lihat bagian 15.
+> - **[Terjawab]** poin diskusi/pertanyaan terbuka yang telah disepakati solusinya.
 
 ---
 
@@ -12,39 +13,41 @@
 
 Proyek ini adalah layanan **inbox email sementara** yang bisa dipakai siapa saja tanpa mendaftar, mirip Yopmail. Pengguna cukup mengetik nama alamat apa saja di domain layanan, lalu langsung melihat email yang masuk ke alamat itu.
 
-Pengguna utamanya adalah **developer yang menguji aplikasi**: misalnya mendaftar akun di aplikasi yang sedang dikembangkan, lalu memeriksa email verifikasi, reset kata sandi, atau notifikasi yang dikirim aplikasi tersebut.
+Pengguna utamanya adalah **developer dan QA yang menguji aplikasi**: misalnya mendaftar akun di aplikasi yang sedang dikembangkan, lalu memeriksa email verifikasi, reset kata sandi, kode OTP, atau notifikasi yang dikirim aplikasi tersebut.
 
-Layanan ini **dijalankan sendiri oleh pemilik proyek sebagai layanan publik di satu domain** [Keputusan], dan kodenya dibuka sebagai open source.
+Layanan ini **dijalankan sendiri oleh pemilik proyek sebagai layanan publik di satu domain utama** [Keputusan], dan kodenya dibuka sebagai open source.
 
 ## 2. Latar belakang dan masalah
 
 Pemilik proyek memakai Yopmail untuk menguji email dari aplikasi. Cara kerjanya sudah cukup baik, tetapi ada keterbatasan yang ingin diatasi [Keputusan]:
 
-1. Tidak dirancang untuk komunikasi dua arah (hanya menerima).
-2. Masa simpan email singkat (8 hari).
-3. Tidak ada kata sandi, sehingga siapa pun yang tahu alamat bisa membaca inbox.
+1. Tidak dirancang untuk komunikasi dua arah (hanya menerima untuk MVP; balasan menyusul).
+2. Masa simpan email singkat (Yopmail 8 hari vs Quick-Box 30 hari).
+3. Tidak ada kata sandi, sehingga siapa pun yang tahu alamat bisa membaca inbox publik.
 
-Selain itu, pemilik ingin memiliki versi sendiri yang kodenya terbuka dan bisa dikembangkan bersama komunitas.
+Selain itu, pemilik ingin memiliki versi sendiri yang kodenya terbuka, berbasis **Rust** untuk kehandalan, efisiensi resource, dan keamanan memori tingkat tinggi, serta **React** di antarmuka web [Keputusan].
 
 ## 3. Tujuan, bukan tujuan, dan anti-tujuan
 
 ### Tujuan
-- Developer bisa menguji alur email dengan cepat: ketik alamat, kirim email dari aplikasi, lihat hasilnya.
-- Pengalaman pakai setara atau lebih nyaman daripada Yopmail, tanpa langkah daftar.
-- Inbox bisa dikunci dengan kata sandi dan disimpan lebih lama dari 8 hari.
-- Kode terbuka dan mudah dipasang orang lain di server mereka sendiri.
+- Developer bisa menguji alur email dengan cepat: ketik alamat, kirim email dari aplikasi, lihat hasilnya secara realtime.
+- Pengalaman pakai setara atau lebih nyaman daripada Yopmail, tanpa langkah daftar akun.
+- Inbox bisa dikunci dengan kata sandi dan disimpan lebih lama (30 hari secara default).
+- Deteksi otomatis kode OTP (4–8 digit) dan link verifikasi dengan tombol salin satu-klik.
+- Kode terbuka (*open source*) dan mudah dipasang orang lain di server mereka sendiri dalam satu container Docker (*single-process monolith*).
 
 ### Bukan tujuan (untuk versi pertama)
-- **Mengirim atau membalas email** (menyusul, lihat bagian 14).
-- API publik dan fitur tes otomatis/CI (menyusul).
+- **Mengirim atau membalas email** (menyusul via relay SMTP di tahap lanjutan).
+- API publik dan fitur tes otomatis/CI (menyusul di v2).
 - Menjadi layanan email pribadi jangka panjang atau pengganti Gmail.
 - Aplikasi mobile native.
 
 ### Anti-tujuan (hal yang membuat proyek ini gagal walau secara teknis berjalan)
 - Dipakai sebagai alat spam atau penipuan, atau domainnya masuk daftar hitam.
-- Email pengguna yang terkunci bisa dibaca orang lain.
+- Email pengguna yang terkunci bisa dibaca orang lain (kebocoran privasi).
 - Terlalu merepotkan sehingga developer kembali ke Yopmail (misalnya memaksa login).
 - Email berbahaya (script, pelacak) mengeksekusi sesuatu di browser pengguna.
+- Perebutan nama inbox populer (*permanent squatting*) oleh pengguna nakal.
 
 ## 4. Pengguna dan kasus penggunaan
 
@@ -55,24 +58,22 @@ Selain itu, pemilik ingin memiliki versi sendiri yang kodenya terbuka dan bisa d
 | U1 | Developer mendaftar di aplikasi dengan `budi-test@domain` lalu membuka inbox untuk melihat email verifikasi. |
 | U2 | Developer mencari kode OTP 6 digit atau link verifikasi di email dan menyalinnya dengan satu klik. |
 | U3 | Developer ingin inbox ujinya tidak bisa dibaca orang lain, sehingga mengunci inbox dengan kata sandi. |
-| U4 | Developer membuka kembali inbox yang sama beberapa hari kemudian dan email lama masih ada. |
+| U4 | Developer membuka kembali inbox yang sama beberapa hari kemudian dan email lama masih ada (retensi 30 hari). |
 | U5 | Developer memeriksa HTML, versi teks, dan header (SPF/DKIM) sebuah email untuk men-debug template. |
-| U6 | Developer memeriksa lampiran yang dikirim aplikasinya. |
+| U6 | Developer memeriksa dan mengunduh lampiran yang dikirim aplikasinya. |
 
 ## 5. Pembeda dari Yopmail dan layanan sejenis
 
-Tidak ada fitur versi pertama yang benar-benar baru. Pembedanya adalah **kombinasi**, sebagai alternatif open source yang bisa dikunci:
-
-| | Yopmail dan sejenisnya | Proyek ini |
+| Fitur | Yopmail dan sejenisnya | Quick-Box |
 |---|---|---|
-| Kata sandi inbox | Umumnya tidak ada | Ada, opsional |
-| Masa simpan | Singkat (Yopmail 8 hari) | 30 hari secara default, dapat diatur [Usulan] |
-| Kode sumber | Tertutup | Open source |
-| Self-host | Tidak bisa | Bisa |
-| Deteksi OTP/tautan | Tidak ada | Ada |
-| Balasan (tahap berikutnya) | Tidak ada | Direncanakan |
+| Kata sandi inbox | Umumnya tidak ada | Ada, opsional (Argon2id) |
+| Masa simpan | Singkat (Yopmail 8 hari) | 30 hari default, dapat diatur [Keputusan] |
+| Kode sumber | Tertutup | Open source (Rust + React) |
+| Self-host | Tidak bisa | Bisa (Satu image Docker monolitik) |
+| Deteksi OTP/tautan | Tidak ada | Ada (Ekstraksi regex instan + tombol salin) |
+| Balasan (tahap berikutnya) | Tidak ada | Direncanakan (via relay SMTP) |
 
-**Catatan:** ini penilaian awal dari pengetahuan umum, belum dibandingkan satu per satu dengan layanan lain. Pembanding yang sudah ada: Mailpit/MailHog (lokal), Mailinator, mail.tm, Guerrilla Mail, MailSlurp. Tim sebaiknya mencoba beberapa sebelum finalisasi.
+---
 
 ## 6. Ruang lingkup versi pertama (MVP)
 
@@ -84,163 +85,148 @@ Prioritas: **P0** wajib, **P1** sebaiknya ada, **P2** boleh menyusul.
 |---|---|---|
 | FR-01 | P0 | Server SMTP menerima email untuk `apa-saja@domain` tanpa pendaftaran. |
 | FR-02 | P0 | Web inbox: pengguna mengetik nama alamat lalu melihat daftar email. |
-| FR-03 | P0 | Tampilan dua panel (daftar di kiri, isi di kanan) mengikuti prototipe di `docs/design/`. |
-| FR-04 | P0 | Email baru muncul otomatis tanpa memuat ulang halaman (realtime). |
-| FR-05 | P0 | Isi email ditampilkan dalam tab **HTML**, **Teks**, dan **Header**. HTML dirender di iframe ber-sandbox. |
-| FR-06 | P0 | Kunci inbox dengan kata sandi. Inbox terkunci tidak bisa dibuka tanpa sandi. |
-| FR-07 | P0 | Retensi: email dihapus otomatis setelah masa simpan (default 30 hari, dapat diatur pengelola). |
-| FR-08 | P0 | Pembatasan penyalahgunaan: batas jumlah dan ukuran email per inbox, dan batas permintaan per IP. |
-| FR-09 | P1 | Deteksi otomatis kode OTP 6 digit dan link verifikasi, dengan tombol Salin. |
-| FR-10 | P1 | Tampilkan dan unduh lampiran. |
+| FR-03 | P0 | Tampilan 3 panel modern (Sidebar navigasi, daftar inbox di tengah, pembaca pesan di kanan) mengikuti acuan desain dan prototipe. |
+| FR-04 | P0 | Email baru muncul otomatis tanpa memuat ulang halaman via Server-Sent Events (SSE) realtime. |
+| FR-05 | P0 | Isi email ditampilkan dalam tab **HTML Preview**, **Plain Text**, dan **Raw Headers**. HTML dirender di iframe ber-sandbox dengan blokir gambar eksternal default. |
+| FR-06 | P0 | Kunci inbox dengan kata sandi (Argon2id). Inbox terkunci hanya bisa dibuka dengan sandi tersebut. |
+| FR-07 | P0 | Retensi: email dihapus otomatis setelah 30 hari. Kunci pada inbox yang tidak aktif 30 hari otomatis terlepas. |
+| FR-08 | P0 | Pembatasan penyalahgunaan: batas ukuran email (10 MB), batas jumlah per inbox (200), batas laju permintaan per IP. |
+| FR-09 | P1 | Deteksi otomatis kode OTP (4–8 digit) dan link verifikasi dengan tombol Salin satu-klik. |
+| FR-10 | P1 | Tampilkan dan unduh lampiran berkas. |
 | FR-11 | P1 | Cari email (pengirim, subjek, isi), favorit, tandai belum dibaca, hapus dan pulihkan. |
-| FR-12 | P1 | Mode gelap dan tata letak satu kolom di layar sempit. |
-| FR-13 | P1 | Pemasangan dengan Docker (satu perintah) di VPS kecil. |
-| FR-14 | P2 | Daftar "inbox saya" untuk berpindah cepat antar-inbox yang pernah dibuka (disimpan di browser). |
+| FR-12 | P1 | Mode gelap (*dark mode*) dan tata letak satu kolom responsif di layar sempit/mobile. |
+| FR-13 | P1 | Pemasangan dengan Docker multi-stage (satu perintah) di VPS kecil (RAM < 50MB). |
+| FR-14 | P2 | Daftar "inbox saya / recent inboxes" untuk berpindah cepat antar-inbox yang pernah dibuka (disimpan di browser via `localStorage`). |
 
 ### Tombol yang tampil tetapi nonaktif
-**Tulis**, **Balas**, **Terkirim**, dan **Draf** tampil dengan label "segera hadir" [Keputusan dari pemilik; pilihan awal untuk MVP].
+**Tulis**, **Balas**, **Terkirim**, dan **Draf** tampil dengan label "segera hadir" [Keputusan; pilihan awal untuk MVP].
+
+---
 
 ## 7. Perilaku inti yang harus jelas
 
-**Membuka inbox.** Mengetik nama alamat membuat inbox secara otomatis saat email pertama masuk atau saat dibuka. Inbox yang belum dikunci terbuka untuk siapa pun yang tahu namanya (sama seperti Yopmail). Ini harus dijelaskan di UI.
+**Membuka inbox.** Mengetik nama alamat membuat inbox secara otomatis saat email pertama masuk atau saat dibuka. Inbox yang belum dikunci terbuka untuk siapa pun yang tahu namanya (sama seperti Yopmail). Penjelasan ini tertera jelas di antarmuka.
 
-**Mengunci inbox.** Pemilik pertama yang menetapkan kata sandi menjadi pemilik kunci. Inbox terkunci hanya bisa dibuka dengan sandi tersebut. Kata sandi disimpan sebagai hash (argon2id atau bcrypt) [Usulan]. Tidak ada fitur lupa sandi di MVP, dan hal ini harus dinyatakan jelas di UI. Inbox terkunci yang tidak aktif tetap mengikuti aturan retensi.
+**Mengunci inbox.** Pemilik pertama yang menetapkan kata sandi menjadi pemilik kunci. Inbox terkunci hanya bisa dibuka dengan sandi tersebut. Kata sandi disimpan sebagai hash Argon2id [Keputusan].
+- *Pencegahan Pembajakan Pesan Lama:* Saat suatu inbox publik pertama kali dikunci dengan kata sandi, email publik lama yang sudah ada di dalamnya otomatis dibersihkan (dihapus) sehingga penyerang tidak bisa mengunci inbox orang lain untuk mengintip kode verifikasi sebelumnya [Keputusan].
+- *Pelepasan Kunci Mandiri:* Pengguna yang sedang membuka sesi kunci dapat menghapus kata sandi (`DELETE /api/inboxes/{name}/lock`) untuk mengembalikan inbox ke status publik [Keputusan].
+- *Tidak ada pemulihan lupa sandi di MVP.* Hal ini dinyatakan jelas di UI.
 
-> **[Terbuka]** Risiko: orang bisa mengunci nama populer seperti `test`. Perlu aturan (misalnya nama dicadangkan, kunci kedaluwarsa jika tidak aktif, atau batas jumlah kunci per IP). Lihat bagian 15.
+**Pencegahan Perebutan Nama (Anti-Squatting) & Retensi.** 
+- Waktu aktivitas pengguna web (`last_user_activity_at`) dicatat terpisah dari waktu email masuk (`last_received_at`).
+- Jika sebuah inbox terkunci tidak pernah dibuka atau diakses oleh pengguna web selama 30 hari berturut-turut, kunci sandi otomatis dibatalkan (*auto-release*), seluruh email lama dibersihkan, dan alamat inbox kembali menjadi publik. Mengirim email otomatis (ping/spam) tidak akan memperpanjang masa kunci [Terjawab].
 
-**Retensi.** Penghapusan berdasarkan umur email (30 hari [Usulan]). Pengelola dapat mengubah angka ini lewat konfigurasi.
+**Keamanan isi email.** Isi HTML dirender secara eksklusif di dalam `iframe` dengan atribut `sandbox="allow-popups"` (tanpa `allow-scripts` dan tanpa `allow-same-origin`). Gambar dan pelacak jarak jauh diblokir secara default dengan opsi tombol "Muat Gambar Luar".
 
-**Email berbahaya.** Isi HTML dirender hanya di iframe `sandbox` tanpa script. Gambar dan sumber daya jarak jauh diblokir secara default untuk mencegah pelacakan (tombol "muat gambar" opsional).
+---
 
 ## 8. Persyaratan non-fungsional
 
 | Area | Persyaratan |
 |---|---|
-| Kinerja | Email yang diterima muncul di inbox yang sedang dibuka dalam waktu kurang dari 2 detik [Usulan]. |
-| Ukuran | Batas ukuran email dan lampiran per pesan (awal: 10 MB) dan jumlah email per inbox (awal: 200) [Usulan]. |
-| Keamanan | Hash sandi, iframe sandbox, pembatasan laju, header keamanan (CSP), tanpa menyimpan data pribadi yang tidak perlu. |
-| Privasi | Tidak ada pelacak pihak ketiga. Log tidak menyimpan isi email. |
-| Ketersediaan | Satu server cukup di tahap awal. Tidak ada janji uptime tinggi. |
-| Portabilitas | Satu binary backend dan satu image Docker. |
-| Aksesibilitas | Dapat dioperasikan dengan keyboard, kontras memadai, mendukung mode gelap. |
-| Bahasa | UI berbahasa Indonesia terlebih dahulu. Struktur teks disiapkan agar mudah diterjemahkan (i18n) [Usulan]. |
+| Kinerja | Email yang diterima muncul di inbox yang sedang dibuka dalam waktu kurang dari 2 detik. |
+| Ukuran & Resource | Batas email 10 MB per pesan; konsumsi RAM server monolitik di bawah 50 MB. |
+| Keamanan | Hash sandi Argon2id, iframe sandbox anti-XSS, rate limiting per IP, Content Security Policy (CSP). |
+| Privasi | Tanpa pelacak pihak ketiga; log server tidak mencatat isi tubuh email. |
+| Ketersediaan & Portabilitas | Satu binary mandiri hasil kompilasi Rust dan satu image Docker multi-stage. |
+| Aksesibilitas | Navigasi keyboard, kontras memadai, dukungan penuh tema Gelap & Terang. |
+| Bahasa | Antarmuka berbahasa Indonesia terlebih dahulu, struktur teks disiapkan untuk i18n. |
+
+---
 
 ## 9. Arsitektur dan teknologi
 
 | Komponen | Pilihan | Status |
 |---|---|---|
-| Backend | **Go** (server SMTP + API + realtime dalam satu proses) | [Keputusan]: pemilik menyebut Go atau Rust, dan Go dipilih sebagai rekomendasi |
-| Frontend | **React** | [Keputusan]; dikerjakan bersama teman pemilik |
-| Library SMTP/MIME | `go-smtp`, `go-message` (atau setara) | [Usulan] |
-| Database | **SQLite** untuk awal. Pindah ke PostgreSQL bila perlu | [Usulan] |
-| Realtime | WebSocket atau SSE | [Usulan] |
-| Penyimpanan lampiran | Disk lokal pada MVP | [Usulan] |
-| Pemasangan | Docker / docker compose | [Usulan] |
+| Backend | **Rust** (Server SMTP + API Axum + SSE realtime + worker retensi dalam satu proses monolitik) | [Keputusan Pemilik Proyek] |
+| Frontend | **React** (Vite + TypeScript + Tailwind CSS) | [Keputusan Pemilik Proyek] |
+| Library SMTP & MIME | Tokio TCP listener (RFC 5321) + `mail-parser` | [Keputusan] |
+| Database | **SQLite** (mode Write-Ahead Logging / WAL) via `sqlx` | [Keputusan] |
+| Realtime | **Server-Sent Events (SSE)** via Axum (sinyal pemicu ringan `new_email`, isi diambil terotentikasi) | [Keputusan] |
+| Penyimpanan lampiran | Disk lokal (`/data/attachments/`) | [Keputusan] |
+| Pemasangan | Docker / Docker Compose (Multi-stage build) | [Keputusan] |
 
 ```
-Pengirim email ──SMTP:25──▶ [ Server SMTP (Go) ] ──▶ [ Database + file lampiran ]
-                                      │                          │
-Browser (React) ◀──HTTP + WebSocket──▶ [ API (Go) ] ◀───────────┘
+Pengirim email ──SMTP:25──▶ [ Listener SMTP Tokio (Rust) ] ──▶ [ SQLite (WAL) + Disk Lampiran ]
+                                           │                                        │
+Browser (React) ◀──HTTP REST + SSE────────▶ [ Server API Axum (Rust) ] ◀────────────┘
+                                                   │
+                                   [ Background Worker (Retensi 30 Hari) ]
 ```
 
-**Kontrak yang harus dijaga sejak awal:** model data menyimpan email sebagai bagian dari **percakapan (thread)** dan menyediakan tempat untuk pesan berarah "keluar", sehingga fitur balasan nanti tidak perlu membongkar skema.
-
-### Garis besar API (arah, bukan kontrak final)
-- `GET /api/inboxes/{name}/messages`: daftar email.
-- `GET /api/inboxes/{name}/messages/{id}`: isi email (HTML, teks, header, lampiran).
-- `DELETE /api/inboxes/{name}/messages/{id}`.
-- `POST /api/inboxes/{name}/lock` dan `POST /api/inboxes/{name}/unlock`.
-- `GET /api/inboxes/{name}/events`: aliran email baru (realtime).
-
-### Model data kasar
-`Inbox(name, lock_hash?, created_at)` → `Message(id, inbox, thread_id, direction[in|out], from, to, subject, text, html, headers, received_at, read, favorite, deleted)` → `Attachment(id, message, filename, size, content_type, path)`.
-
-## 10. Infrastruktur dan DNS
-
-- **Domain** milik pemilik, dengan record **MX** mengarah ke server.
-- **VPS:** belum dibeli. Untuk *menerima* email, port 25 masuk (*inbound*) cukup dan hampir semua VPS mengizinkan. Memilih provider berdasarkan port 25 **keluar** baru penting saat fitur kirim dibangun (banyak provider memblokirnya). Referensi riset ada di bagian 16.
-- Tahap kirim email (setelah MVP) disarankan lewat **relay** (misalnya Amazon SES di port 587) agar reputasi IP dan rDNS lebih mudah dikelola. Perlu juga SPF, DKIM, dan DMARC.
-- Sertifikat TLS (misalnya Let's Encrypt) untuk web dan, bila dipakai, STARTTLS SMTP.
-
-## 11. Penyalahgunaan dan risiko
-
-| Risiko | Mitigasi awal |
-|---|---|
-| Domain dipakai untuk menerima email spam/penipuan | Batas laju, batas ukuran, retensi, dan fitur melapor. Perlu kebijakan penggunaan. |
-| Pengiriman email dua arah dipakai sebagai spam (tahap berikutnya) | Kirim hanya lewat relay, batas ketat per inbox/IP, dan tidak boleh kirim ke daftar besar. |
-| Pencurian inbox terbuka (nama mudah ditebak) | Disebutkan jelas di UI bahwa inbox terbuka itu publik. Gunakan kunci sandi. |
-| Perebutan nama inbox (squatting) oleh pengunci nama populer | **[Terbuka]**, lihat bagian 15. |
-| Serangan lewat isi HTML (XSS, pelacak) | Iframe sandbox, blokir sumber jarak jauh, CSP. |
-| Penyimpanan penuh | Batas per inbox, penghapusan otomatis, pemantauan disk. |
-| Isu hukum/privasi (isi email pihak ketiga, penghapusan atas permintaan) | **[Terbuka]**: perlu kebijakan privasi dan kontak penghapusan. |
-
-## 12. Desain UI
-
-Acuan visual ada di folder `docs/design/`:
-- `reference-ui.jpg`: gambar referensi dari pemilik proyek (klien email modern dengan panel daftar dan panel isi).
-- `prototype-inbox.html`: **prototipe sementara yang bisa dibuka langsung di browser** dan sudah disetujui pemilik sebagai arah tampilan. Datanya contoh, dan prototipe ini **bukan kode produksi**. Tim frontend boleh mengambil tata letak dan perilakunya sebagai acuan, tetapi sebaiknya membangun ulang dengan komponen React.
-
-Perilaku yang sudah diperagakan prototipe: buka inbox dengan nama bebas, kunci sandi, daftar dan detail dua panel, tab HTML/Teks/Header, deteksi OTP dan tautan dengan tombol salin, simulasi email masuk, favorit, hapus dan pulihkan, mode gelap, dan tata letak satu kolom di layar sempit.
-
-## 13. Kriteria keberhasilan MVP
-
-- Email yang dikirim dari aplikasi nyata (misalnya form registrasi) ke `nama@domain` muncul di web dalam beberapa detik.
-- Verifikasi OTP/link bisa dilakukan tanpa menyalin manual dari isi email panjang.
-- Inbox yang dikunci tidak bisa dibuka tanpa sandi (diuji, bukan diasumsikan).
-- Email lama tetap ada sampai batas retensi lalu terhapus otomatis.
-- Satu orang lain berhasil memasang layanan ini di server sendiri hanya dengan mengikuti README.
-- Tidak ada eksekusi script dari isi email pada pengujian keamanan dasar.
-
-## 14. Peta jalan
-
-1. **MVP** (dokumen ini): menerima email, web inbox, kunci sandi, retensi, pembatasan.
-2. **Setelah MVP:** balasan dan pengiriman lewat relay, lalu Compose/Terkirim/Draf aktif.
-3. **Berikutnya:** API untuk tes otomatis (endpoint "tunggu email", webhook, kunci API), enkripsi tambahan pada penyimpanan.
-
-## 15. Pertanyaan terbuka
-
-Belum diputuskan, jawab sebelum atau selama perencanaan:
-
-1. **Nama proyek dan domain** layanan.
-2. **Perebutan nama inbox:** aturan untuk mencegah nama populer dikunci orang (nama dicadangkan, batas per IP, kunci kedaluwarsa).
-3. **Lupa kata sandi:** tidak ada pemulihan di MVP. Apakah ini diterima?
-4. **Lisensi open source** (MIT, Apache-2.0, AGPL, dll.). AGPL melindungi dari penyedia layanan tertutup, MIT lebih bebas.
-5. **Kebijakan privasi dan penghapusan atas permintaan** untuk layanan publik.
-6. **Jumlah nyata batas** (ukuran email, jumlah per inbox, laju per IP) setelah ada data pemakaian.
-7. **Pilihan VPS** (belum dibeli) dan anggaran bulanan.
-
-## 16. Referensi riset
-
-Pencarian awal (Oktober 2026) soal kebijakan port 25 outbound provider VPS. Hasilnya sumber sekunder dan klaim vendor, jadi **verifikasi sendiri** sebelum membeli (uji `nc -vz gmail-smtp-in.l.google.com 25` dari instance baru).
-
-- Terbuka tanpa permintaan (menurut sumber): OVHcloud, Kamatera, Contabo.
-- Diblokir default, dapat dibuka lewat permintaan: Hetzner (setelah tagihan pertama dibayar).
-- Diblokir: Vultr, UpCloud, Azure.
-- Sumber: octeth.com/vps-for-email-marketing, webshanks.com/vps-with-open-port-25, vpsforlife.com/which-vps-providers-allow-port-25.php, findstack.com/resources/port-25-blocked-vps.
+### Garis besar API
+- `GET /api/inboxes/{name}/status`: informasi status kunci, jumlah pesan, dan unread.
+- `POST /api/inboxes/{name}/lock`: mengunci inbox dengan kata sandi (Argon2id).
+- `POST /api/inboxes/{name}/unlock`: memverifikasi sandi dan mengembalikan token sesi.
+- `DELETE /api/inboxes/{name}/lock`: menghapus kunci sandi dan mengembalikan inbox ke publik.
+- `GET /api/inboxes/{name}/messages`: daftar email (membutuhkan token jika terkunci).
+- `GET /api/inboxes/{name}/messages/{id}`: detail pesan lengkap (HTML, teks, header, lampiran).
+- `DELETE /api/inboxes/{name}/messages/{id}`: hapus pesan / pindahkan ke tempat sampah.
+- `GET /api/inboxes/{name}/attachments/{id}`: unduh berkas lampiran.
+- `GET /api/inboxes/{name}/events`: aliran Server-Sent Events (SSE) notifikasi pesan baru realtime.
 
 ---
 
-## 17. Panduan untuk kontributor dan pengembangan dengan bantuan AI
+## 10. Infrastruktur dan DNS
 
-Tim berencana memakai AI sebagai alat bantu pengembangan [Keputusan]. Aturan berikut [Usulan] menjaga kualitas dan keamanan:
+- **Domain:** Single domain terkonfigurasi via environment variable `DOMAIN`. MX record mengarah ke IP publik server. Email untuk domain asing ditolak dengan SMTP `550 5.1.1 Mailbox Unrecognized`.
+- **VPS:** Membutuhkan port 25 inbound terbuka. Port 80/443 digunakan untuk antarmuka web melalui reverse proxy bawaan atau Caddy/Nginx.
+- **Relay Outbound (Tahap Berikutnya):** Pengiriman email (post-MVP) menggunakan relay (seperti Amazon SES) di port 587 untuk menjaga reputasi IP.
 
-**Prinsip**
-- AI adalah alat bantu. **Manusia bertanggung jawab** atas setiap perubahan yang digabung. Tidak ada kode hasil AI yang digabung tanpa ditinjau oleh seorang kontributor.
-- Jangan menempelkan rahasia (kata sandi, kunci API, isi `.env`, data email nyata) ke alat AI.
-- Perubahan yang dibantu AI harus lolos tes yang sama dengan kode lain. Tulis tes untuk perilaku penting, terutama kunci sandi, retensi, pembatasan, dan sanitasi HTML.
+---
 
-**Alur kerja**
-1. Satu isu atau tugas kecil per cabang dan per PR.
-2. Jelaskan konteks kepada AI: rujuk bagian PRD yang relevan (misalnya FR-06) agar hasilnya sesuai kebutuhan.
-3. Jalankan tes dan linter secara lokal sebelum membuka PR.
-4. Di PR, tuliskan apa yang diubah dan mengapa, lalu cantumkan jika AI dipakai secara signifikan.
-5. Tinjauan kode oleh minimal satu orang lain.
+## 11. Desain UI & Prototipe
 
-**Hal yang wajib diperiksa manusia pada kode hasil AI**
-- Penanganan kata sandi dan sesi (tidak ada kebocoran, perbandingan yang aman).
-- Sanitasi dan pengisolasian isi email (iframe sandbox, tanpa eval).
-- Batas input (ukuran, jumlah, laju) dan penanganan lampiran.
-- Dependensi baru: periksa kebutuhan, lisensi, dan reputasi sebelum menambah.
-- Klaim yang tidak bisa diverifikasi (fungsi atau API yang tidak ada).
+Acuan visual dan interaksi ada di folder `docs/design/`:
+1. `docs/design/reference-ui.jpg`: Desain referensi klien email modern 3-panel (Sidebar navigasi, daftar email, dan pembaca detail).
+2. `docs/design/prototype-inbox.html`: Prototipe interaktif mandiri yang memperagakan tata letak, alur kunci sandi, ekstraksi OTP, dan tab rendering.
 
-**Struktur proyek** (usulan, bisa disesuaikan saat perencanaan): `backend/` (Go), `frontend/` (React), `docs/`, `deploy/` (Docker). Berkas `AGENTS.md` / `CLAUDE.md` di akar repositori dapat berisi konvensi kode dan perintah tes supaya alat AI bekerja konsisten.
+---
+
+## 12. Peta Jalan Pengembangan Bertahap (8 Fase)
+
+Pengerjaan dipecah menjadi 8 fase terstruktur (rincian lengkap di `docs/superpowers/specs/2026-11-04-quick-box-design.md`):
+
+1. **Fase 1: Project Scaffolding & Core Architecture** — Setup Rust Cargo workspace (`quickbox-core`, `quickbox-smtp`, `quickbox-api`, `quickbox-app`), frontend Vite/React, dan skema SQLite WAL.
+2. **Fase 2: Asynchronous SMTP Ingestion & MIME Parsing** — Listener SMTP Tokio port 25, parser MIME `mail-parser`, ekstraksi regex OTP & link verifikasi.
+3. **Fase 3: REST & Realtime API (Axum)** — Endpoint inbox, pesan, autentikasi sesi kunci sandi, dan aliran SSE.
+4. **Fase 4: Retention Worker & Abuse Mitigation** — Worker pembersihan 30 hari, auto-release kunci inbox tidak aktif, dan rate limiting per IP.
+5. **Fase 5: React Frontend Scaffolding & Design System** — Layout 3-panel responsif (Tailwind CSS, tema gelap/terang, komponen UI).
+6. **Fase 6: Integrasi Inbox & Realtime Sync** — Integrasi SSE frontend, riwayat inbox lokal, dialog modal kunci sandi.
+7. **Fase 7: Message Viewer, Sandboxed Iframe & Tooling OTP** — Iframe sandbox aman, blokir pelacak luar, tombol salin OTP 1-klik, tab HTML/Teks/Header.
+8. **Fase 8: Containerization & Deployment Documentation** — Multi-stage Dockerfile, docker-compose.yml, panduan konfigurasi DNS MX.
+
+---
+
+## 13. Resolusi Pertanyaan Terbuka
+
+1. **Nama proyek:** **Quick-Box** (Quickbox). [Terjawab]
+2. **Perebutan nama inbox:** Auto-release kunci setelah 30 hari tanpa aktivitas pengguna web (`last_user_activity_at`). [Terjawab]
+3. **Lupa kata sandi:** Tidak ada pemulihan di MVP. Jika lupa sandi, inbox akan ter-reset otomatis menjadi publik setelah 30 hari tidak aktif. [Terjawab]
+4. **Lisensi open source:** MIT License. [Usulan Disepakati]
+5. **Batas nyata:** Ukuran email 10 MB, maksimal 200 email per inbox. [Terjawab]
+6. **Arsitektur:** Monolitik proses tunggal di Rust (`tokio` + `axum` + SQLite) dan frontend React. [Terjawab]
+
+---
+
+## 14. Struktur Proyek
+
+```
+quick-box/
+├── Cargo.toml                       # Rust Workspace definition
+├── crates/
+│   ├── quickbox-core/               # Model data, skema SQLite, konfigurasi
+│   ├── quickbox-smtp/               # Listener SMTP Tokio & MIME parser
+│   ├── quickbox-api/                # Axum REST API & SSE handler
+│   └── quickbox-app/                # Main entrypoint executable
+├── frontend/                        # React 19 + TypeScript + Tailwind CSS (Vite)
+├── docs/
+│   ├── design/
+│   │   ├── prototype-inbox.html     # Prototipe interaktif
+│   │   └── reference-ui.jpg         # Referensi visual klien email
+│   └── superpowers/
+│       └── specs/
+│           └── 2026-11-04-quick-box-design.md # Desain teknis detail
+├── PRD.md                           # Dokumen PRD ini
+└── README.md                        # Panduan instalasi dan pengembangan
+```
