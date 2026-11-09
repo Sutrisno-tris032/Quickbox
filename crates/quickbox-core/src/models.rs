@@ -53,3 +53,4 @@ pub struct InboxStatus {
     pub created_at: DateTime<Utc>,
     pub last_active_at: DateTime<Utc>,
 }
+

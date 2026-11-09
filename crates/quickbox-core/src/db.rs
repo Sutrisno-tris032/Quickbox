@@ -94,3 +94,4 @@ pub async fn remove_lock(pool: &SqlitePool, name: &str) -> Result<()> {
     .await?;
     Ok(())
 }
+

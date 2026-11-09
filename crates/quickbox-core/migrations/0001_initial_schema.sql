@@ -40,3 +40,4 @@ CREATE TABLE IF NOT EXISTS attachments (
 
 CREATE INDEX IF NOT EXISTS idx_messages_inbox ON messages(inbox_name, received_at DESC);
 CREATE INDEX IF NOT EXISTS idx_inbox_user_active ON inboxes(last_user_activity_at);
+
