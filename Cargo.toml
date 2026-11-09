@@ -1,0 +1,30 @@
+[workspace]
+members = [
+    "crates/quickbox-core",
+    "crates/quickbox-smtp",
+    "crates/quickbox-api",
+    "crates/quickbox-app",
+]
+resolver = "2"
+
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+authors = ["Sutrisno & Contributors"]
+license = "MIT"
+
+[workspace.dependencies]
+quickbox-core = { path = "crates/quickbox-core" }
+quickbox-smtp = { path = "crates/quickbox-smtp" }
+quickbox-api = { path = "crates/quickbox-api" }
+tokio = { version = "1.43", features = ["full"] }
+sqlx = { version = "0.8", features = ["runtime-tokio", "sqlite", "chrono", "uuid"] }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+chrono = { version = "0.4", features = ["serde"] }
+uuid = { version = "1.11", features = ["v4", "serde"] }
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+thiserror = "2.0"
+anyhow = "1.0"
+

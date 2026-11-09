@@ -1,0 +1,27 @@
+[package]
+name = "quickbox-app"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+
+[dependencies]
+quickbox-core = { workspace = true }
+quickbox-smtp = { workspace = true }
+quickbox-api = { workspace = true }
+tokio = { workspace = true }
+tracing = { workspace = true }
+tracing-subscriber = { workspace = true }
+anyhow = { workspace = true }
+axum = { version = "0.8", features = ["macros"] }
+tower-http = { version = "0.6", features = ["fs", "trace", "cors"] }
+
+[dev-dependencies]
+quickbox-core = { workspace = true }
+quickbox-smtp = { workspace = true }
+quickbox-api = { workspace = true }
+axum = { version = "0.8" }
+tower = { version = "0.5", features = ["util"] }
+http-body-util = "0.1"
+tempfile = "3.17"
+serde_json = { workspace = true }
