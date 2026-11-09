@@ -10,5 +10,7 @@ pub struct AppState {
     pub attachments_dir: PathBuf,
     pub broadcast_tx: Arc<broadcast::Sender<NewMailNotification>>,
     pub jwt_secret: String,
+    /// Shared secret for Cloudflare Email Worker webhook. If empty, webhook endpoint is disabled.
+    pub webhook_secret: String,
 }
 

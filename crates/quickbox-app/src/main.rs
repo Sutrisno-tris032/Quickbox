@@ -33,6 +33,8 @@ async fn main() -> Result<()> {
     let jwt_secret = env::var("JWT_SECRET").unwrap_or_else(|_| "quickbox-default-insecure-secret-key-change-in-prod".to_string());
     let retention_days: i64 = env::var("RETENTION_DAYS").unwrap_or_else(|_| "30".to_string()).parse()?;
     let frontend_dist = PathBuf::from(env::var("FRONTEND_DIST").unwrap_or_else(|_| "./frontend/dist".to_string()));
+    let webhook_secret = env::var("WEBHOOK_SECRET").unwrap_or_default();
+    let enable_smtp = env::var("ENABLE_SMTP").unwrap_or_else(|_| "true".to_string()) != "false";
 
     tokio::fs::create_dir_all(&attachments_dir).await?;
 
@@ -57,18 +59,22 @@ async fn main() -> Result<()> {
         }
     });
 
-    // 6. Start Inbound SMTP Server
-    let smtp_bind = format!("0.0.0.0:{}", smtp_port);
-    let smtp_server = SmtpServer::bind(&smtp_bind, &domain, 10_000_000)
-        .await?
-        .with_storage(pool.clone(), attachments_dir.clone(), broadcast_tx.clone());
+    // 6. Start Inbound SMTP Server (can be disabled when using Cloudflare Email Worker)
+    if enable_smtp {
+        let smtp_bind = format!("0.0.0.0:{}", smtp_port);
+        let smtp_server = SmtpServer::bind(&smtp_bind, &domain, 10_000_000)
+            .await?
+            .with_storage(pool.clone(), attachments_dir.clone(), broadcast_tx.clone());
 
-    tokio::spawn(async move {
-        info!("Inbound SMTP Server listening on {}", smtp_bind);
-        if let Err(e) = smtp_server.serve().await {
-            error!("SMTP Server error: {}", e);
-        }
-    });
+        tokio::spawn(async move {
+            info!("Inbound SMTP Server listening on {}", smtp_bind);
+            if let Err(e) = smtp_server.serve().await {
+                error!("SMTP Server error: {}", e);
+            }
+        });
+    } else {
+        info!("SMTP listener disabled (ENABLE_SMTP=false). Using Cloudflare Email Worker webhook instead.");
+    }
 
     // 7. Setup Axum Web API & Static Frontend Server
     let state = AppState {
@@ -76,6 +82,7 @@ async fn main() -> Result<()> {
         attachments_dir,
         broadcast_tx,
         jwt_secret,
+        webhook_secret,
     };
 
     let api_app = create_app(state);
