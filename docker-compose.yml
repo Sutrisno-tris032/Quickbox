@@ -1,0 +1,21 @@
+services:
+  quickbox:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: quickbox:latest
+    container_name: quickbox
+    restart: unless-stopped
+    ports:
+      - "25:25"       # Inbound SMTP
+      - "8080:8080"   # Web UI and HTTP/SSE API
+    environment:
+      - DOMAIN=quickbox.dev
+      - DATABASE_URL=sqlite:///data/quickbox.db
+      - ATTACHMENTS_DIR=/data/attachments
+      - FRONTEND_DIST=/app/frontend/dist
+      - RETENTION_DAYS=30
+      - JWT_SECRET=change-this-to-a-very-secure-random-secret-key-in-prod
+    volumes:
+      - ./data:/data
+

@@ -1220,10 +1220,16 @@ name = "quickbox-app"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "axum",
+ "http-body-util",
  "quickbox-api",
  "quickbox-core",
  "quickbox-smtp",
+ "serde_json",
+ "tempfile",
  "tokio",
+ "tower",
+ "tower-http",
  "tracing",
  "tracing-subscriber",
 ]
