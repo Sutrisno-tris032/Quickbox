@@ -1,23 +1,42 @@
+use crate::ingest::{ingest_email, NewMailNotification};
 use anyhow::Result;
+use sqlx::SqlitePool;
 use std::net::SocketAddr;
+use std::path::PathBuf;
+use std::sync::Arc;
 use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
 use tokio::net::TcpStream;
-use tracing::{debug, warn};
+use tokio::sync::broadcast;
+use tracing::{debug, error, warn};
 
 pub struct SmtpConnection {
     stream: TcpStream,
     peer_addr: SocketAddr,
     domain: String,
     max_bytes: usize,
+    pool: Option<SqlitePool>,
+    attachments_dir: Option<PathBuf>,
+    broadcast_tx: Option<Arc<broadcast::Sender<NewMailNotification>>>,
 }
 
 impl SmtpConnection {
-    pub fn new(stream: TcpStream, peer_addr: SocketAddr, domain: String, max_bytes: usize) -> Self {
+    pub fn new(
+        stream: TcpStream,
+        peer_addr: SocketAddr,
+        domain: String,
+        max_bytes: usize,
+        pool: Option<SqlitePool>,
+        attachments_dir: Option<PathBuf>,
+        broadcast_tx: Option<Arc<broadcast::Sender<NewMailNotification>>>,
+    ) -> Self {
         Self {
             stream,
             peer_addr,
             domain,
             max_bytes,
+            pool,
+            attachments_dir,
+            broadcast_tx,
         }
     }
 
@@ -49,6 +68,16 @@ impl SmtpConnection {
                 if trimmed == "." {
                     in_data = false;
                     debug!("Received email data ({} bytes)", data_buffer.len());
+
+                    // Ingest email if storage is configured
+                    if let (Some(ref pool), Some(ref att_dir), Some(ref tx)) =
+                        (&self.pool, &self.attachments_dir, &self.broadcast_tx)
+                    {
+                        if let Err(e) = ingest_email(&data_buffer, &rcpt_to, pool, att_dir, Arc::clone(tx)).await {
+                            error!("Failed to ingest email: {}", e);
+                        }
+                    }
+
                     writer.write_all(b"250 2.0.0 OK: Message accepted\r\n").await?;
                     _mail_from = None;
                     rcpt_to.clear();
