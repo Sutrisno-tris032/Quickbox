@@ -1,2 +1,4 @@
-// quickbox-smtp
+pub mod connection;
+pub mod server;
 
+pub use server::SmtpServer;
