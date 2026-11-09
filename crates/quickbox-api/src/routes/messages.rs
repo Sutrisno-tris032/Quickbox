@@ -2,19 +2,26 @@ use crate::middleware::auth::{extract_bearer_token, verify_token};
 use crate::state::AppState;
 use axum::{
     body::Body,
-    extract::{Path, State},
+    extract::{Path, Query, State},
     http::{header, HeaderMap, StatusCode},
     response::{IntoResponse, Json, Response},
 };
 use quickbox_core::models::{Attachment, Message};
+use serde::Deserialize;
 use serde_json::json;
 use tokio::fs::File;
 use tokio_util::io::ReaderStream;
+
+#[derive(Deserialize, Default)]
+pub struct AttachmentQuery {
+    pub token: Option<String>,
+}
 
 async fn check_inbox_access(
     state: &AppState,
     name: &str,
     headers: &HeaderMap,
+    query_token: Option<&str>,
 ) -> Result<quickbox_core::models::Inbox, (StatusCode, Json<serde_json::Value>)> {
     let inbox = quickbox_core::db::get_or_create_inbox(&state.pool, name)
         .await
@@ -23,6 +30,7 @@ async fn check_inbox_access(
     if inbox.is_locked {
         let auth_hdr = headers.get("Authorization").and_then(|h| h.to_str().ok());
         let token = extract_bearer_token(auth_hdr)
+            .or(query_token)
             .ok_or_else(|| (StatusCode::UNAUTHORIZED, Json(json!({ "error": "This inbox is locked. Password required." }))))?;
 
         if !verify_token(token, &inbox.name, &state.jwt_secret) {
@@ -41,7 +49,7 @@ pub async fn list_messages(
     Path(name): Path<String>,
     headers: HeaderMap,
 ) -> Result<Json<Vec<Message>>, (StatusCode, Json<serde_json::Value>)> {
-    let inbox = check_inbox_access(&state, &name, &headers).await?;
+    let inbox = check_inbox_access(&state, &name, &headers, None).await?;
 
     let messages = sqlx::query_as::<_, Message>(
         "SELECT * FROM messages WHERE inbox_name = ? AND is_deleted = 0 ORDER BY received_at DESC LIMIT 100"
@@ -59,7 +67,7 @@ pub async fn get_message(
     Path((name, id)): Path<(String, String)>,
     headers: HeaderMap,
 ) -> Result<Json<Message>, (StatusCode, Json<serde_json::Value>)> {
-    let inbox = check_inbox_access(&state, &name, &headers).await?;
+    let inbox = check_inbox_access(&state, &name, &headers, None).await?;
 
     let message = sqlx::query_as::<_, Message>(
         "SELECT * FROM messages WHERE id = ? AND inbox_name = ? AND is_deleted = 0"
@@ -85,7 +93,7 @@ pub async fn delete_message(
     Path((name, id)): Path<(String, String)>,
     headers: HeaderMap,
 ) -> Result<impl IntoResponse, (StatusCode, Json<serde_json::Value>)> {
-    let inbox = check_inbox_access(&state, &name, &headers).await?;
+    let inbox = check_inbox_access(&state, &name, &headers, None).await?;
 
     sqlx::query("UPDATE messages SET is_deleted = 1 WHERE id = ? AND inbox_name = ?")
         .bind(&id)
@@ -102,12 +110,13 @@ pub async fn list_message_attachments(
     Path((name, id)): Path<(String, String)>,
     headers: HeaderMap,
 ) -> Result<Json<Vec<Attachment>>, (StatusCode, Json<serde_json::Value>)> {
-    let _inbox = check_inbox_access(&state, &name, &headers).await?;
+    let _inbox = check_inbox_access(&state, &name, &headers, None).await?;
 
     let attachments = sqlx::query_as::<_, Attachment>(
-        "SELECT * FROM attachments WHERE message_id = ? ORDER BY created_at ASC"
+        "SELECT a.* FROM attachments a JOIN messages m ON a.message_id = m.id WHERE a.message_id = ? AND m.inbox_name = ? ORDER BY a.created_at ASC"
     )
     .bind(&id)
+    .bind(&name)
     .fetch_all(&state.pool)
     .await
     .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({ "error": e.to_string() }))))?;
@@ -118,16 +127,20 @@ pub async fn list_message_attachments(
 pub async fn download_attachment(
     State(state): State<AppState>,
     Path((name, id)): Path<(String, String)>,
+    Query(query): Query<AttachmentQuery>,
     headers: HeaderMap,
 ) -> Result<Response, (StatusCode, Json<serde_json::Value>)> {
-    let _inbox = check_inbox_access(&state, &name, &headers).await?;
+    let _inbox = check_inbox_access(&state, &name, &headers, query.token.as_deref()).await?;
 
-    let attachment = sqlx::query_as::<_, Attachment>("SELECT * FROM attachments WHERE id = ?")
-        .bind(&id)
-        .fetch_optional(&state.pool)
-        .await
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({ "error": e.to_string() }))))?
-        .ok_or_else(|| (StatusCode::NOT_FOUND, Json(json!({ "error": "Attachment not found" }))))?;
+    let attachment = sqlx::query_as::<_, Attachment>(
+        "SELECT a.* FROM attachments a JOIN messages m ON a.message_id = m.id WHERE a.id = ? AND m.inbox_name = ?"
+    )
+    .bind(&id)
+    .bind(&name)
+    .fetch_optional(&state.pool)
+    .await
+    .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({ "error": e.to_string() }))))?
+    .ok_or_else(|| (StatusCode::NOT_FOUND, Json(json!({ "error": "Attachment not found" }))))?;
 
     let full_path = state.attachments_dir.join(&attachment.disk_path);
     let file = File::open(&full_path)

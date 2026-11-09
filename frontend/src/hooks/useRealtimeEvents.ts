@@ -3,8 +3,6 @@ import { useEffect } from 'react'
 export interface RealtimeMailEvent {
   event: string
   id: string
-  subject: string
-  sender: string
 }
 
 export function useRealtimeEvents(

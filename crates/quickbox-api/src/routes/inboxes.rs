@@ -66,10 +66,14 @@ pub async fn lock_inbox(
     let hashed = quickbox_core::auth::hash_password(&payload.password)
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({ "error": e.to_string() }))))?;
 
-    // Ensure inbox exists then lock it (lock_inbox also purges old public messages)
-    quickbox_core::db::get_or_create_inbox(&state.pool, &name)
+    // Ensure inbox exists then check if already locked
+    let inbox = quickbox_core::db::get_or_create_inbox(&state.pool, &name)
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({ "error": e.to_string() }))))?;
+
+    if inbox.is_locked {
+        return Err((StatusCode::CONFLICT, Json(json!({ "error": "Inbox is already locked" }))));
+    }
 
     quickbox_core::db::lock_inbox(&state.pool, &name, &hashed)
         .await

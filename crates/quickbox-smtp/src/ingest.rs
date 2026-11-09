@@ -89,7 +89,12 @@ pub async fn ingest_email(
         // Handle attachments
         for att in &parsed.attachments {
             let att_id = Uuid::new_v4().to_string();
-            let relative_disk_path = format!("{}/{}", message_id, att.filename);
+            let sanitized_filename = std::path::Path::new(&att.filename)
+                .file_name()
+                .and_then(|s| s.to_str())
+                .filter(|s| !s.trim().is_empty())
+                .unwrap_or("attachment");
+            let relative_disk_path = format!("{}/{}_{}", message_id, att_id, sanitized_filename);
             let full_disk_path = attachments_dir.join(&relative_disk_path);
 
             if let Some(parent) = full_disk_path.parent() {
@@ -105,7 +110,7 @@ pub async fn ingest_email(
             )
             .bind(&att_id)
             .bind(&message_id)
-            .bind(&att.filename)
+            .bind(sanitized_filename)
             .bind(&att.content_type)
             .bind(att.data.len() as i64)
             .bind(&relative_disk_path)

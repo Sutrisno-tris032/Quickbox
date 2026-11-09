@@ -90,3 +90,4 @@ async fn test_retention_and_auto_release_inactive_lock() {
     let active_inbox = quickbox_core::db::get_or_create_inbox(&pool, "active-inbox").await.unwrap();
     assert_eq!(active_inbox.is_locked, true, "Active locked inbox should remain locked");
 }
+

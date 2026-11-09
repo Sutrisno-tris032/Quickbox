@@ -14,16 +14,17 @@ pub fn generate_token(inbox_name: &str, secret: &str, duration_secs: i64) -> Str
 }
 
 pub fn verify_token(token: &str, expected_inbox: &str, secret: &str) -> bool {
-    let parts: Vec<&str> = token.split('.').collect();
+    let parts: Vec<&str> = token.rsplitn(3, '.').collect();
     if parts.len() != 3 {
         return false;
     }
-    let inbox = parts[0];
+    // rsplitn(3, '.') yields [sig, expires_at, inbox]
+    let sig = parts[0];
     let expires_at: i64 = match parts[1].parse() {
         Ok(exp) => exp,
         Err(_) => return false,
     };
-    let sig = parts[2];
+    let inbox = parts[2];
 
     if inbox != expected_inbox.to_lowercase() {
         return false;

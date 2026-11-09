@@ -87,8 +87,8 @@ impl SmtpConnection {
                     if data_buffer.len() + line.len() > self.max_bytes {
                         warn!("Message size limit exceeded ({} bytes)", self.max_bytes);
                         writer.write_all(b"552 5.3.4 Message size exceeds fixed limit\r\n").await?;
-                        in_data = false;
-                        data_buffer.clear();
+                        writer.flush().await?;
+                        return Ok(());
                     } else {
                         // Dot un-stuffing: if line begins with "..", strip leading dot
                         let content = if line.starts_with("..") {

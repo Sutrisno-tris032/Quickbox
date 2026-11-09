@@ -46,10 +46,12 @@ Buka peramban Anda di **`http://localhost:8080`**.
 ## 💻 Pengembangan Lokal (Development)
 
 ### Prasyarat
+
 - **Rust Toolchain**: `rustup` & `cargo` (v1.80+)
 - **Bun**: v1.2+ (atau Node.js 20+)
 
 ### Menjalankan Backend (Rust)
+
 ```bash
 # Jalankan seluruh unit & integration test
 cargo test
@@ -57,30 +59,33 @@ cargo test
 # Jalankan server monolith backend
 cargo run -p quickbox-app
 ```
-*Backend akan berjalan di port `8080` untuk Web/API dan port `25` (atau port custom via env) untuk SMTP.*
+
+_Backend akan berjalan di port `8080` untuk Web/API dan port `25` (atau port custom via env) untuk SMTP._
 
 ### Menjalankan Frontend (React + Vite)
+
 ```bash
 cd frontend
 bun install
 bun run dev
 ```
-*Frontend akan berjalan di `http://localhost:5173` dan otomatis mem-proxy panggilan `/api` ke backend `http://localhost:8080`.*
+
+_Frontend akan berjalan di `http://localhost:5173` dan otomatis mem-proxy panggilan `/api` ke backend `http://localhost:8080`._
 
 ---
 
 ## ⚙️ Variabel Lingkungan (Configuration)
 
-| Variabel | Default | Penjelasan |
-|---|---|---|
-| `DOMAIN` | `quickbox.dev` | Domain utama layanan (email ke domain lain ditolak di SMTP 550) |
-| `SMTP_PORT` | `25` | Port listener penerima email SMTP |
-| `HTTP_PORT` | `8080` | Port HTTP Web UI & REST/SSE API |
-| `DATABASE_URL` | `sqlite://quickbox.db` | URL koneksi basis data SQLite |
-| `ATTACHMENTS_DIR` | `./data/attachments` | Direktori penyimpanan berkas lampiran |
-| `FRONTEND_DIST` | `./frontend/dist` | Lokasi berkas static build React |
-| `RETENTION_DAYS` | `30` | Batas retensi email dan pelepasan kunci tidak aktif (hari) |
-| `JWT_SECRET` | *(string acak)* | Kunci rahasia HMAC penandatanganan token sesi inbox |
+| Variabel          | Default                | Penjelasan                                                      |
+| ----------------- | ---------------------- | --------------------------------------------------------------- |
+| `DOMAIN`          | `quickbox.dev`         | Domain utama layanan (email ke domain lain ditolak di SMTP 550) |
+| `SMTP_PORT`       | `25`                   | Port listener penerima email SMTP                               |
+| `HTTP_PORT`       | `8080`                 | Port HTTP Web UI & REST/SSE API                                 |
+| `DATABASE_URL`    | `sqlite://quickbox.db` | URL koneksi basis data SQLite                                   |
+| `ATTACHMENTS_DIR` | `./data/attachments`   | Direktori penyimpanan berkas lampiran                           |
+| `FRONTEND_DIST`   | `./frontend/dist`      | Lokasi berkas static build React                                |
+| `RETENTION_DAYS`  | `30`                   | Batas retensi email dan pelepasan kunci tidak aktif (hari)      |
+| `JWT_SECRET`      | _(string acak)_        | Kunci rahasia HMAC penandatanganan token sesi inbox             |
 
 ---
 
@@ -113,4 +118,5 @@ quick-box/
 ---
 
 ## 📄 Lisensi
+
 Didistribusikan di bawah lisensi **MIT License**.

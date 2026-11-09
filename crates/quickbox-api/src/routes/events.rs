@@ -21,8 +21,6 @@ pub async fn stream_events(
                 let payload = serde_json::json!({
                     "event": "new_email",
                     "id": notif.message_id,
-                    "subject": notif.subject,
-                    "sender": notif.sender,
                 });
                 return Some(Ok(Event::default().data(payload.to_string())));
             }
