@@ -1,0 +1,16 @@
+[package]
+name = "quickbox-smtp"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+
+[dependencies]
+quickbox-core = { workspace = true }
+tokio = { workspace = true }
+tracing = { workspace = true }
+thiserror = { workspace = true }
+anyhow = { workspace = true }
+mail-parser = "0.9"
+regex = "1.11"
+
