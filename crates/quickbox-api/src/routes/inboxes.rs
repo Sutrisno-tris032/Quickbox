@@ -136,3 +136,4 @@ pub async fn remove_lock(
 
     Ok(Json(json!({ "status": "unlocked", "inbox": name })))
 }
+

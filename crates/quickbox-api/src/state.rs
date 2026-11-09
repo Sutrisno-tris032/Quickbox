@@ -11,3 +11,4 @@ pub struct AppState {
     pub broadcast_tx: Arc<broadcast::Sender<NewMailNotification>>,
     pub jwt_secret: String,
 }
+

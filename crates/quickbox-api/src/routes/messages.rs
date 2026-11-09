@@ -97,6 +97,24 @@ pub async fn delete_message(
     Ok(Json(json!({ "status": "deleted", "id": id })))
 }
 
+pub async fn list_message_attachments(
+    State(state): State<AppState>,
+    Path((name, id)): Path<(String, String)>,
+    headers: HeaderMap,
+) -> Result<Json<Vec<Attachment>>, (StatusCode, Json<serde_json::Value>)> {
+    let _inbox = check_inbox_access(&state, &name, &headers).await?;
+
+    let attachments = sqlx::query_as::<_, Attachment>(
+        "SELECT * FROM attachments WHERE message_id = ? ORDER BY created_at ASC"
+    )
+    .bind(&id)
+    .fetch_all(&state.pool)
+    .await
+    .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({ "error": e.to_string() }))))?;
+
+    Ok(Json(attachments))
+}
+
 pub async fn download_attachment(
     State(state): State<AppState>,
     Path((name, id)): Path<(String, String)>,

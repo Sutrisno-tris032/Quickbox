@@ -24,6 +24,10 @@ pub fn create_app(state: AppState) -> Router {
             get(messages::get_message).delete(messages::delete_message),
         )
         .route(
+            "/api/inboxes/{name}/messages/{id}/attachments",
+            get(messages::list_message_attachments),
+        )
+        .route(
             "/api/inboxes/{name}/attachments/{id}",
             get(messages::download_attachment),
         )

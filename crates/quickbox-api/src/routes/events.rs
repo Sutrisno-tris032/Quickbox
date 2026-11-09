@@ -32,3 +32,4 @@ pub async fn stream_events(
 
     Sse::new(stream).keep_alive(KeepAlive::new().interval(Duration::from_secs(15)))
 }
+

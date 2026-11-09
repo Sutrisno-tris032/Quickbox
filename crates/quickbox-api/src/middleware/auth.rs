@@ -52,3 +52,4 @@ pub fn extract_bearer_token(auth_header: Option<&str>) -> Option<&str> {
     }
     None
 }
+
