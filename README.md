@@ -74,6 +74,53 @@ _Frontend akan berjalan di `http://localhost:5173` dan otomatis mem-proxy panggi
 
 ---
 
+## 🌐 Catatan: Pengujian Lokal vs Menerima Email dari Internet (Gmail, Outlook, dll.)
+
+### Mengapa Email dari Gmail Belum Masuk ke Laptop/Localhost?
+Jika Anda mencoba mengirim email dari **Gmail, Yahoo, atau Outlook** ke Quick-Box yang berjalan di komputer lokal, email tidak akan sampai karena dua hal mendasar dalam protokol email internet:
+
+1. **Port 25 Wajib untuk Pertukaran Email Antar-Server (MTA to MTA):**
+   - Seluruh server email internet (seperti Google Mail) **hanya mengirim ke TCP Port 25**.
+   - Gmail tidak mendukung pengiriman ke port non-standar (seperti 2525 atau 8080).
+   - Hampir seluruh penyedia internet rumahan/kantor (IndiHome, Biznet, FirstMedia, MyRepublic, dll.) memblokir Port 25 masuk dan keluar demi pencegahan penyebaran spam.
+2. **Kebutuhan DNS MX Record Publik:**
+   - Server Gmail membutuhkan rekaman **DNS MX (Mail Exchange)** publik untuk mencari alamat IP server tujuan dari domain penerima (misal: `test@domainanda.com`). Komputer lokal di balik NAT/router rumahan tidak memiliki IP publik statis atau DNS MX.
+
+---
+
+### 🚀 Menyiapkan Server Publik untuk Menerima Email dari Gmail
+
+Untuk menjalankan Quick-Box sebagai layanan publik yang bisa menerima email langsung dari Gmail, ikuti langkah berikut:
+
+1. **Sewa VPS (Virtual Private Server):**
+   - Gunakan VPS dengan IP publik statis (contoh: Hetzner, DigitalOcean, Linode/Akamai, Vultr, atau AWS EC2).
+   - **Penting:** Pastikan penyedia VPS tidak memblokir port 25 inbound (beberapa penyedia seperti AWS atau DigitalOcean memblokir port 25 secara default untuk akun baru dan memerlukan tiket permohonan pembukaan port 25).
+2. **Konfigurasi DNS Domain Anda:**
+   Tambahkan record berikut pada panel DNS domain Anda:
+   | Tipe | Nama Host | Nilai / Target | Prioritas |
+   |---|---|---|---|
+   | **A** | `mail.domainanda.com` | `IP_PUBLIK_VPS` | - |
+   | **MX** | `@` (atau `domainanda.com`) | `mail.domainanda.com` | `10` |
+3. **Jalankan via Docker di VPS:**
+   ```bash
+   DOMAIN=domainanda.com SMTP_PORT=25 HTTP_PORT=8080 docker compose up -d
+   ```
+   *Setelah DNS terpropagasi, siapa pun dari Gmail dapat langsung mengirim email ke `apapun@domainanda.com` dan email akan masuk seketika.*
+
+---
+
+### 💻 Penggunaan untuk Pengujian Aplikasi Lokal (Development)
+
+Untuk pengujian aplikasi yang sedang Anda bangun di laptop lokal tanpa VPS:
+- Arahkan pengaturan SMTP client di aplikasi Anda (Laravel, Node.js/Nodemailer, Django, Go, Spring Boot, dll.) ke:
+  - **SMTP Host:** `localhost` atau `127.0.0.1`
+  - **SMTP Port:** `2525` *(atau `25` jika dijalankan dengan hak administrator)*
+  - **Enkripsi (TLS/SSL):** `None` / `Disabled`
+  - **Autentikasi (User/Pass):** Dikosongkan
+- Setiap email verifikasi, OTP, dan pemberitahuan yang dikirim aplikasi Anda akan langsung ditangkap dan muncul seketika di Web UI **`http://localhost:8080`**.
+
+---
+
 ## ⚙️ Variabel Lingkungan (Configuration)
 
 | Variabel          | Default                | Penjelasan                                                      |

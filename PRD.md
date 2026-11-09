@@ -170,7 +170,11 @@ Browser (React) ◀──HTTP REST + SSE────────▶ [ Server API
 ## 10. Infrastruktur dan DNS
 
 - **Domain:** Single domain terkonfigurasi via environment variable `DOMAIN`. MX record mengarah ke IP publik server. Email untuk domain asing ditolak dengan SMTP `550 5.1.1 Mailbox Unrecognized`.
-- **VPS:** Membutuhkan port 25 inbound terbuka. Port 80/443 digunakan untuk antarmuka web melalui reverse proxy bawaan atau Caddy/Nginx.
+- **VPS & Port 25 Inbound:**
+  - Penerimaan email langsung dari penyedia publik (Gmail, Outlook, Yahoo) **wajib menggunakan port TCP 25** dan record DNS MX publik yang valid. Penyedia email internet tidak mendukung pengiriman antar-MTA ke port kustom.
+  - Mayoritas ISP rumahan/kantor memblokir port 25 masuk dan keluar untuk mencegah spam. Karena itu, penerimaan email dari Gmail membutuhkan VPS publik (Hetzner, Linode, DigitalOcean, dsb.) dengan port 25 inbound yang aktif.
+  - Untuk pengembangan lokal (*local development*), server dapat dijalankan di port alternatif (misal `2525`) di mana aplikasi penguji diarahkan ke `localhost:2525` tanpa otentikasi/TLS.
+- **Reverse Proxy:** Port 80/443 digunakan untuk antarmuka web dan API melalui reverse proxy bawaan atau Caddy/Nginx.
 - **Relay Outbound (Tahap Berikutnya):** Pengiriman email (post-MVP) menggunakan relay (seperti Amazon SES) di port 587 untuk menjaga reputasi IP.
 
 ---
