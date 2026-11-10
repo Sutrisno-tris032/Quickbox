@@ -2,13 +2,34 @@ use crate::extractor::{extract_links, extract_otp};
 use crate::parser::ParsedEmail;
 use anyhow::Result;
 use quickbox_core::models::Message;
+use regex::Regex;
 use serde::{Deserialize, Serialize};
 use sqlx::SqlitePool;
+use std::collections::HashMap;
 use std::path::Path;
 use std::sync::Arc;
 use tokio::fs;
 use tokio::sync::broadcast;
 use uuid::Uuid;
+
+/// Rewrite `cid:...` references in an email's HTML body (used for inline/embedded
+/// images) into URLs pointing at our own attachment download endpoint, so the
+/// sandboxed iframe can actually render them instead of showing a broken image.
+fn rewrite_cid_references(html: &str, inbox_name: &str, cid_to_att_id: &HashMap<String, String>) -> String {
+    if cid_to_att_id.is_empty() {
+        return html.to_string();
+    }
+
+    let re = Regex::new(r#"(?i)cid:([^"'\s>]+)"#).unwrap();
+    re.replace_all(html, |caps: &regex::Captures| {
+        let cid = &caps[1];
+        match cid_to_att_id.get(cid) {
+            Some(att_id) => format!("/api/inboxes/{}/attachments/{}", inbox_name, att_id),
+            None => caps[0].to_string(),
+        }
+    })
+    .into_owned()
+}
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct NewMailNotification {
@@ -63,6 +84,20 @@ pub async fn ingest_email(
 
         let message_id = Uuid::new_v4().to_string();
 
+        // Pre-generate attachment IDs so inline `cid:` references in the HTML
+        // body can be rewritten to real attachment URLs before the message is saved.
+        let attachment_ids: Vec<String> = parsed.attachments.iter().map(|_| Uuid::new_v4().to_string()).collect();
+        let cid_to_att_id: HashMap<String, String> = parsed
+            .attachments
+            .iter()
+            .zip(attachment_ids.iter())
+            .filter_map(|(att, att_id)| att.content_id.clone().map(|cid| (cid, att_id.clone())))
+            .collect();
+        let rewritten_body_html = parsed
+            .body_html
+            .as_deref()
+            .map(|html| rewrite_cid_references(html, &local_part, &cid_to_att_id));
+
         sqlx::query(
             r#"
             INSERT INTO messages (
@@ -79,7 +114,7 @@ pub async fn ingest_email(
         .bind(&parsed.subject)
         .bind(&parsed.snippet)
         .bind(&parsed.body_text)
-        .bind(&parsed.body_html)
+        .bind(&rewritten_body_html)
         .bind(&parsed.raw_headers)
         .bind(&detected_otp)
         .bind(&detected_links)
@@ -87,8 +122,7 @@ pub async fn ingest_email(
         .await?;
 
         // Handle attachments
-        for att in &parsed.attachments {
-            let att_id = Uuid::new_v4().to_string();
+        for (att, att_id) in parsed.attachments.iter().zip(attachment_ids.iter()) {
             let sanitized_filename = std::path::Path::new(&att.filename)
                 .file_name()
                 .and_then(|s| s.to_str())
@@ -108,7 +142,7 @@ pub async fn ingest_email(
                 VALUES (?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
                 "#
             )
-            .bind(&att_id)
+            .bind(att_id)
             .bind(&message_id)
             .bind(sanitized_filename)
             .bind(&att.content_type)

@@ -5,6 +5,7 @@ pub struct ParsedAttachment {
     pub filename: String,
     pub content_type: String,
     pub data: Vec<u8>,
+    pub content_id: Option<String>,
 }
 
 pub struct ParsedEmail {
@@ -64,14 +65,21 @@ impl ParsedEmail {
                 .to_string();
             let content_type = att
                 .content_type()
-                .map(|ct| ct.c_type.to_string())
+                .map(|ct| match &ct.c_subtype {
+                    Some(subtype) => format!("{}/{}", ct.c_type, subtype),
+                    None => ct.c_type.to_string(),
+                })
                 .unwrap_or_else(|| "application/octet-stream".to_string());
             let data = att.contents().to_vec();
+            let content_id = att
+                .content_id()
+                .map(|cid| cid.trim_matches(|c| c == '<' || c == '>').to_string());
 
             attachments.push(ParsedAttachment {
                 filename,
                 content_type,
                 data,
+                content_id,
             });
         }
 

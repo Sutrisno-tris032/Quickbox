@@ -122,18 +122,6 @@ export function App() {
   // Selected message detail
   const selectedMessage = messages.find((m) => m.id === selectedMessageId) || null
 
-  const handleDeleteMessage = async (id: string) => {
-    try {
-      await fetch(`/api/inboxes/${encodeURIComponent(currentInbox)}/messages/${id}`, {
-        method: 'DELETE',
-      })
-      setSelectedMessageId(null)
-      refresh()
-    } catch (e) {
-      console.error('Failed to delete message', e)
-    }
-  }
-
   return (
     <>
       <AppLayout
@@ -145,16 +133,10 @@ export function App() {
           />
         }
         statusBar={
-          <>
-            <div className="flex items-center gap-2 font-mono text-[11px] text-slate-500 dark:text-slate-400">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-              <span>NODE ID: JK-AP-SOUTHEAST-1 • ENKRIPSI SESSION AKTIF (TLS 1.3)</span>
-            </div>
-            <div className="hidden sm:flex items-center gap-4 text-slate-400 text-[11px]">
-              <span>Webhook Disinkron: <strong className="text-emerald-500 font-semibold">Enabled (200 OK)</strong></span>
-              <span>Audio Alert: <strong>Off</strong></span>
-            </div>
-          </>
+          <div className="hidden sm:flex items-center gap-4 text-slate-400 text-[11px] ml-auto">
+            <span>Webhook Disinkron: <strong className="text-emerald-500 font-semibold">Enabled (200 OK)</strong></span>
+            <span>Audio Alert: <strong>Off</strong></span>
+          </div>
         }
         mailboxNav={<MailboxNav activeSession={currentInbox} />}
         sidebar={
@@ -197,9 +179,7 @@ export function App() {
           <MessageDetail
             message={selectedMessage}
             onBack={() => setSelectedMessageId(null)}
-            onDelete={handleDeleteMessage}
             inboxName={currentInbox}
-            onRandomizeInbox={handleGenerateRandomInbox}
           />
         }
         isReadingMobile={!!selectedMessageId}

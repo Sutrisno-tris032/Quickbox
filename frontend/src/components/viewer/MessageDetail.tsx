@@ -1,15 +1,9 @@
 import React, { useState } from 'react'
 import {
-  Trash2,
   ArrowLeft,
   Copy,
   Check,
-  Printer,
-  ShieldCheck,
   Mail,
-  RefreshCw,
-  QrCode,
-  Share2,
 } from 'lucide-react'
 import { Button } from '../ui/Button'
 import { SandboxedHtmlFrame } from './SandboxedHtmlFrame'
@@ -19,17 +13,13 @@ import type { Message } from '../../types'
 export interface MessageDetailProps {
   message: Message | null
   onBack: () => void
-  onDelete: (id: string) => void
   inboxName: string
-  onRandomizeInbox?: () => void
 }
 
 export const MessageDetail: React.FC<MessageDetailProps> = ({
   message,
   onBack,
-  onDelete,
   inboxName,
-  onRandomizeInbox,
 }) => {
   const [activeTab, setActiveTab] = useState<'html' | 'text' | 'headers'>('html')
   const [copiedEmail, setCopiedEmail] = useState(false)
@@ -83,31 +73,6 @@ export const MessageDetail: React.FC<MessageDetailProps> = ({
             )}
           </Button>
         </div>
-
-        {/* Action Pills below Address */}
-        <div className="grid grid-cols-3 gap-2 text-xs">
-          <button
-            onClick={onRandomizeInbox}
-            className="flex items-center justify-center gap-1.5 py-1.5 rounded-lg border border-slate-200/90 dark:border-slate-800 bg-slate-50 dark:bg-[#0B0F19] hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 font-medium transition cursor-pointer"
-          >
-            <RefreshCw className="w-3.5 h-3.5 text-slate-500" />
-            <span>Ganti / Randomize</span>
-          </button>
-          <button
-            onClick={handleCopyEmail}
-            className="flex items-center justify-center gap-1.5 py-1.5 rounded-lg border border-slate-200/90 dark:border-slate-800 bg-slate-50 dark:bg-[#0B0F19] hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 font-medium transition cursor-pointer"
-          >
-            <QrCode className="w-3.5 h-3.5 text-slate-500" />
-            <span>QR / Share</span>
-          </button>
-          <button
-            disabled
-            className="flex items-center justify-center gap-1.5 py-1.5 rounded-lg border border-slate-200/60 dark:border-slate-800/60 bg-slate-50/50 dark:bg-[#0B0F19]/50 text-slate-400 font-medium cursor-not-allowed"
-          >
-            <Share2 className="w-3.5 h-3.5" />
-            <span>Auto-Forward</span>
-          </button>
-        </div>
       </div>
 
       {/* 2. Message Detail Body Area */}
@@ -128,64 +93,35 @@ export const MessageDetail: React.FC<MessageDetailProps> = ({
           <div className="max-w-4xl mx-auto space-y-4">
             {/* Header: Sender badge, Subject, Action buttons */}
             <div className="p-4 rounded-2xl bg-white dark:bg-[#0F172A] border border-slate-200/80 dark:border-slate-800 shadow-xs">
-              <div className="flex items-start justify-between gap-3 mb-3">
-                <div className="flex items-start gap-3">
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    onClick={onBack}
-                    className="md:hidden p-1.5 h-8 w-8 -ml-1"
-                  >
-                    <ArrowLeft className="w-4 h-4" />
-                  </Button>
-                  <div className="w-10 h-10 rounded-xl bg-slate-900 dark:bg-white text-white dark:text-slate-900 flex items-center justify-center font-bold text-sm shrink-0 shadow-xs">
-                    {senderInitial}
-                  </div>
-                  <div>
-                    <h2 className="font-bold text-base text-slate-900 dark:text-white leading-snug">
-                      {message.subject || '(Tanpa Subjek)'}
-                    </h2>
-                    <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                      <span className="font-medium text-slate-700 dark:text-slate-300">
-                        {message.sender}
-                      </span>
-                      <span>•</span>
-                      <span>
-                        {new Date(message.received_at).toLocaleTimeString([], {
-                          hour: '2-digit',
-                          minute: '2-digit',
-                        })} WIB
-                      </span>
-                    </div>
+              <div className="flex items-start gap-3 mb-3">
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={onBack}
+                  className="md:hidden p-1.5 h-8 w-8 -ml-1"
+                >
+                  <ArrowLeft className="w-4 h-4" />
+                </Button>
+                <div className="w-10 h-10 rounded-xl bg-slate-900 dark:bg-white text-white dark:text-slate-900 flex items-center justify-center font-bold text-sm shrink-0 shadow-xs">
+                  {senderInitial}
+                </div>
+                <div>
+                  <h2 className="font-bold text-base text-slate-900 dark:text-white leading-snug">
+                    {message.subject || '(Tanpa Subjek)'}
+                  </h2>
+                  <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                    <span className="font-medium text-slate-700 dark:text-slate-300">
+                      {message.sender}
+                    </span>
+                    <span>•</span>
+                    <span>
+                      {new Date(message.received_at).toLocaleTimeString([], {
+                        hour: '2-digit',
+                        minute: '2-digit',
+                      })} WIB
+                    </span>
                   </div>
                 </div>
-
-                <div className="flex items-center gap-1 shrink-0">
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    onClick={() => window.print()}
-                    className="p-1.5 h-8 w-8 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200"
-                    title="Cetak Email"
-                  >
-                    <Printer className="w-4 h-4" />
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    onClick={() => onDelete(message.id)}
-                    className="p-1.5 h-8 w-8 text-slate-400 hover:text-rose-500"
-                    title="Hapus Email"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </Button>
-                </div>
-              </div>
-
-              {/* Security Audit Badge (SPF / DKIM / DMARC verification tag) */}
-              <div className="flex items-center gap-2 pt-3 border-t border-slate-100 dark:border-slate-800 text-[11px] font-mono text-emerald-600 dark:text-emerald-400">
-                <ShieldCheck className="w-3.5 h-3.5" />
-                <span>SPF: PASS • DKIM: PASS (quickbox.dev) • DMARC: VALID</span>
               </div>
             </div>
 
@@ -243,7 +179,7 @@ export const MessageDetail: React.FC<MessageDetailProps> = ({
 
               {/* Render Tab Contents */}
               {activeTab === 'html' && message.body_html ? (
-                <SandboxedHtmlFrame html={message.body_html} />
+                <SandboxedHtmlFrame html={message.body_html} inboxName={inboxName} />
               ) : activeTab === 'text' || !message.body_html ? (
                 <pre className="p-4 rounded-xl bg-slate-50 dark:bg-[#0B0F19] text-xs font-mono text-slate-800 dark:text-slate-200 whitespace-pre-wrap overflow-x-auto leading-relaxed border border-slate-200/60 dark:border-slate-800">
                   {message.body_text || message.snippet || '(Tidak ada konten teks)'}

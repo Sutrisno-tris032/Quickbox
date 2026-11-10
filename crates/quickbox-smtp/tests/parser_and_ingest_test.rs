@@ -55,3 +55,54 @@ Halo Budi, kode verifikasi Anda adalah 582913.\r\n";
     assert_eq!(event.message_id, msg.id);
 }
 
+#[tokio::test]
+async fn test_inline_cid_image_is_rewritten_to_attachment_url() {
+    let pool = quickbox_core::db::init_db("sqlite::memory:").await.unwrap();
+    let temp_dir = tempfile::tempdir().unwrap();
+    let (tx, _rx) = broadcast::channel::<NewMailNotification>(16);
+
+    let raw_email = b"From: sender@example.com\r\n\
+To: budi-test@quickbox.dev\r\n\
+Subject: Inline Image Test\r\n\
+Content-Type: multipart/related; boundary=\"BOUNDARY\"\r\n\
+\r\n\
+--BOUNDARY\r\n\
+Content-Type: text/html; charset=utf-8\r\n\
+\r\n\
+<html><body><p>Lihat gambar:</p><img src=\"cid:logo123\"></body></html>\r\n\
+--BOUNDARY\r\n\
+Content-Type: image/png\r\n\
+Content-Transfer-Encoding: base64\r\n\
+Content-ID: <logo123>\r\n\
+Content-Disposition: inline; filename=\"logo.png\"\r\n\
+\r\n\
+iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=\r\n\
+--BOUNDARY--\r\n";
+
+    let recipients = vec!["budi-test@quickbox.dev".to_string()];
+    let messages = ingest_email(raw_email, &recipients, &pool, temp_dir.path(), Arc::new(tx))
+        .await
+        .unwrap();
+
+    assert_eq!(messages.len(), 1);
+    let msg = &messages[0];
+    let body_html = msg.body_html.clone().expect("expected html body");
+
+    // The raw cid: reference must no longer be present...
+    assert!(!body_html.contains("cid:logo123"));
+
+    // ...and must be replaced with a URL to the actual stored attachment.
+    let attachment: (String, String) =
+        sqlx::query_as("SELECT id, content_type FROM attachments WHERE message_id = ?")
+            .bind(&msg.id)
+            .fetch_one(&pool)
+            .await
+            .unwrap();
+    let expected_url = format!("/api/inboxes/budi-test/attachments/{}", attachment.0);
+    assert!(body_html.contains(&expected_url));
+
+    // The full MIME type (not just the top-level "image") must be stored, otherwise
+    // browsers refuse to render the <img> since the Content-Type header is incomplete.
+    assert_eq!(attachment.1, "image/png");
+}
+

@@ -4,9 +4,10 @@ import { Button } from '../ui/Button'
 
 export interface SandboxedHtmlFrameProps {
   html: string
+  inboxName?: string
 }
 
-export const SandboxedHtmlFrame: React.FC<SandboxedHtmlFrameProps> = ({ html }) => {
+export const SandboxedHtmlFrame: React.FC<SandboxedHtmlFrameProps> = ({ html, inboxName }) => {
   const [loadRemoteImages, setLoadRemoteImages] = useState(false)
 
   // Block external images by default unless user opts in
@@ -19,6 +20,19 @@ export const SandboxedHtmlFrame: React.FC<SandboxedHtmlFrameProps> = ({ html }) 
         /<img([^>]+)src=["'](https?:\/\/[^"']+)["']([^>]*)>/gi,
         '<img$1data-blocked-src="$2" src="data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'100\' height=\'30\'><rect width=\'100%\' height=\'100%\' fill=\'%23eee\'/><text x=\'50%\' y=\'50%\' dominant-baseline=\'middle\' text-anchor=\'middle\' font-size=\'10\' fill=\'%23888\'>[Gambar Diblokir]</text></svg>"$3>'
       )
+    }
+
+    // Inline images (from cid: attachments) point at our own attachment endpoint,
+    // not a third-party host, so they're always shown — but if the inbox is locked,
+    // the <img> request needs the session token to pass auth, same as attachment downloads.
+    if (inboxName) {
+      const token = sessionStorage.getItem(`qb_token_${inboxName.toLowerCase()}`)
+      if (token) {
+        sanitized = sanitized.replace(
+          /(src=["'])(\/api\/inboxes\/[^"']+\/attachments\/[^"'?]+)(["'])/gi,
+          (_match, prefix, path, suffix) => `${prefix}${path}?token=${encodeURIComponent(token)}${suffix}`
+        )
+      }
     }
 
     // Add basic clean styling to HTML email inside iframe
@@ -38,7 +52,7 @@ export const SandboxedHtmlFrame: React.FC<SandboxedHtmlFrameProps> = ({ html }) 
     `
 
     return `<!DOCTYPE html><html><head>${styleHeader}</head><body>${sanitized}</body></html>`
-  }, [html, loadRemoteImages])
+  }, [html, loadRemoteImages, inboxName])
 
   return (
     <div className="flex flex-col h-full">
