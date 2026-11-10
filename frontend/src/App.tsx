@@ -60,6 +60,7 @@ export function App() {
     lock,
     unlock,
     removeLock,
+    clearMessages,
     markRead,
   } = useInbox(currentInbox)
 
@@ -147,6 +148,12 @@ export function App() {
                 markRead(id)
               }}
             onRefresh={refresh}
+            onClearAllMessages={async () => {
+              if (window.confirm(`Yakin ingin mengosongkan semua email di inbox "${currentInbox}"?`)) {
+                await clearMessages()
+                setSelectedMessageId(null)
+              }
+            }}
             isLoading={isLoading}
             isAuthRequired={isAuthRequired}
             onOpenUnlockModal={() => setLockModal({ isOpen: true, mode: 'unlock' })}

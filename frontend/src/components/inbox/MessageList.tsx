@@ -6,6 +6,7 @@ import {
   Check,
   Star,
   Lock,
+  Trash2,
   Inbox as EmptyIcon,
 } from 'lucide-react'
 import { Button } from '../ui/Button'
@@ -17,6 +18,7 @@ export interface MessageListProps {
   selectedMessageId: string | null
   onSelectMessage: (id: string) => void
   onRefresh: () => void
+  onClearAllMessages?: () => void
   isLoading: boolean
   isAuthRequired: boolean
   onOpenUnlockModal: () => void
@@ -28,6 +30,7 @@ export const MessageList: React.FC<MessageListProps> = ({
   selectedMessageId,
   onSelectMessage,
   onRefresh,
+  onClearAllMessages,
   isLoading,
   isAuthRequired,
   onOpenUnlockModal,
@@ -93,15 +96,28 @@ export const MessageList: React.FC<MessageListProps> = ({
               {copied ? <Check className="w-3.5 h-3.5 text-emerald-500" /> : <Copy className="w-3.5 h-3.5" />}
             </button>
           </div>
-          <Button
-            size="sm"
-            variant="ghost"
-            onClick={onRefresh}
-            className="p-1.5 h-8 w-8"
-            title="Muat Ulang"
-          >
-            <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin' : ''}`} />
-          </Button>
+          <div className="flex items-center gap-1">
+            {messages.length > 0 && onClearAllMessages && (
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={onClearAllMessages}
+                className="p-1.5 h-8 w-8 text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition"
+                title="Kosongkan Semua Email di Inbox Ini"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+              </Button>
+            )}
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={onRefresh}
+              className="p-1.5 h-8 w-8"
+              title="Muat Ulang"
+            >
+              <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin' : ''}`} />
+            </Button>
+          </div>
         </div>
 
         {/* Search Bar */}

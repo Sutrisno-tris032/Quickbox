@@ -116,6 +116,23 @@ export function useInbox(inboxName: string) {
     await refresh()
   }
 
+  const clearMessages = async () => {
+    const token = getToken()
+    const headers: Record<string, string> = {}
+    if (token) headers['Authorization'] = `Bearer ${token}`
+
+    const res = await fetch(`/api/inboxes/${encodeURIComponent(inboxName)}/messages`, {
+      method: 'DELETE',
+      headers,
+    })
+    if (!res.ok) {
+      const data = await res.json()
+      throw new Error(data.error || 'Failed to clear inbox messages')
+    }
+    setMessages([])
+    await refresh()
+  }
+
   useEffect(() => {
     refresh()
   }, [refresh])
@@ -130,6 +147,7 @@ export function useInbox(inboxName: string) {
     lock,
     unlock,
     removeLock,
+    clearMessages,
     /** Optimistically mark a message as read in local state (no server round-trip needed
      *  because GET /messages/:id already sets is_read=1 on the backend). */
     markRead: useCallback((messageId: string) => {
