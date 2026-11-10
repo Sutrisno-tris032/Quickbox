@@ -23,7 +23,10 @@ pub fn create_app(state: AppState) -> Router {
         .route("/api/inboxes/{name}/unlock", post(inboxes::unlock_inbox))
         .route("/api/inboxes/{name}/lock", delete(inboxes::remove_lock))
         // Messages
-        .route("/api/inboxes/{name}/messages", get(messages::list_messages))
+        .route(
+            "/api/inboxes/{name}/messages",
+            get(messages::list_messages).delete(messages::clear_all_messages),
+        )
         .route(
             "/api/inboxes/{name}/messages/{id}",
             get(messages::get_message).delete(messages::delete_message),

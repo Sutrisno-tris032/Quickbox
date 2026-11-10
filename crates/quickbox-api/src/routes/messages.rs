@@ -105,6 +105,26 @@ pub async fn delete_message(
     Ok(Json(json!({ "status": "deleted", "id": id })))
 }
 
+pub async fn clear_all_messages(
+    State(state): State<AppState>,
+    Path(name): Path<String>,
+    headers: HeaderMap,
+) -> Result<impl IntoResponse, (StatusCode, Json<serde_json::Value>)> {
+    let inbox = check_inbox_access(&state, &name, &headers, None).await?;
+
+    let result = sqlx::query("UPDATE messages SET is_deleted = 1 WHERE inbox_name = ? AND is_deleted = 0")
+        .bind(&inbox.name)
+        .execute(&state.pool)
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({ "error": e.to_string() }))))?;
+
+    Ok(Json(json!({
+        "status": "cleared",
+        "inbox": inbox.name,
+        "affected": result.rows_affected()
+    })))
+}
+
 pub async fn list_message_attachments(
     State(state): State<AppState>,
     Path((name, id)): Path<(String, String)>,
