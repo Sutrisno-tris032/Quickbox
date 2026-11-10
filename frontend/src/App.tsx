@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { AppLayout } from './components/layout/AppLayout'
+import { TopNavbar, MailboxNav } from './components/layout/TopNavbar'
 import { Sidebar } from './components/inbox/Sidebar'
 import { MessageList } from './components/inbox/MessageList'
 import { MessageDetail } from './components/viewer/MessageDetail'
@@ -18,16 +19,21 @@ function normalizeInboxName(raw: string): string {
 }
 
 export function App() {
+  const DOMAIN = import.meta.env.VITE_DOMAIN || 'quickbox.trisatya.my.id'
+
   const [currentInbox, setCurrentInbox] = useState(() => {
-    return localStorage.getItem('qb_last_inbox') || 'dev-test'
+    return localStorage.getItem('qb_last_inbox') || 'vortex-792'
   })
 
   const [selectedMessageId, setSelectedMessageId] = useState<string | null>(null)
   const [recentInboxes, setRecentInboxes] = useState<string[]>(() => {
     try {
-      return JSON.parse(localStorage.getItem('qb_recent_inboxes') || '["dev-test"]')
+      return JSON.parse(
+        localStorage.getItem('qb_recent_inboxes') ||
+          '["vortex-792", "developer-alpha", "shop-verify-88", "figma-trial-99"]'
+      )
     } catch {
-      return ['dev-test']
+      return ['vortex-792']
     }
   })
 
@@ -79,6 +85,13 @@ export function App() {
     })
   }, [])
 
+  // Generate random inbox address
+  const handleGenerateRandomInbox = useCallback(() => {
+    const randomHex = Math.random().toString(36).substring(2, 7)
+    const randomName = `user-${randomHex}`
+    handleSelectInbox(randomName)
+  }, [handleSelectInbox])
+
   // Remove single inbox from recent history
   const handleRemoveRecentInbox = useCallback((nameToRemove: string) => {
     setRecentInboxes((prev) => {
@@ -124,6 +137,26 @@ export function App() {
   return (
     <>
       <AppLayout
+        topNavbar={
+          <TopNavbar
+            darkMode={darkMode}
+            onToggleDarkMode={() => setDarkMode((prev) => !prev)}
+            currentDomain={DOMAIN}
+          />
+        }
+        statusBar={
+          <>
+            <div className="flex items-center gap-2 font-mono text-[11px] text-slate-500 dark:text-slate-400">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+              <span>NODE ID: JK-AP-SOUTHEAST-1 • ENKRIPSI SESSION AKTIF (TLS 1.3)</span>
+            </div>
+            <div className="hidden sm:flex items-center gap-4 text-slate-400 text-[11px]">
+              <span>Webhook Disinkron: <strong className="text-emerald-500 font-semibold">Enabled (200 OK)</strong></span>
+              <span>Audio Alert: <strong>Off</strong></span>
+            </div>
+          </>
+        }
+        mailboxNav={<MailboxNav activeSession={currentInbox} />}
         sidebar={
           <Sidebar
             currentInbox={currentInbox}
@@ -132,6 +165,7 @@ export function App() {
             onSelectInbox={handleSelectInbox}
             onRemoveRecentInbox={handleRemoveRecentInbox}
             onClearAllRecentInboxes={handleClearAllRecentInboxes}
+            onGenerateRandomInbox={handleGenerateRandomInbox}
             onOpenLockModal={() => setLockModal({ isOpen: true, mode: 'lock' })}
             onRemoveLock={removeLock}
             darkMode={darkMode}
@@ -144,9 +178,9 @@ export function App() {
             messages={messages}
             selectedMessageId={selectedMessageId}
             onSelectMessage={(id) => {
-                setSelectedMessageId(id)
-                markRead(id)
-              }}
+              setSelectedMessageId(id)
+              markRead(id)
+            }}
             onRefresh={refresh}
             onClearAllMessages={async () => {
               if (window.confirm(`Yakin ingin mengosongkan semua email di inbox "${currentInbox}"?`)) {
@@ -165,6 +199,7 @@ export function App() {
             onBack={() => setSelectedMessageId(null)}
             onDelete={handleDeleteMessage}
             inboxName={currentInbox}
+            onRandomizeInbox={handleGenerateRandomInbox}
           />
         }
         isReadingMobile={!!selectedMessageId}

@@ -1,5 +1,14 @@
 import React, { useState } from 'react'
-import { Clock, Shield, Lock, Unlock, Moon, Sun, ArrowRight, X, Trash2 } from 'lucide-react'
+import {
+  Search,
+  Lock,
+  Unlock,
+  Trash2,
+  X,
+  ShieldCheck,
+  HardDrive,
+  Sparkles,
+} from 'lucide-react'
 import { Button } from '../ui/Button'
 import type { InboxStatus } from '../../types'
 
@@ -12,6 +21,7 @@ export interface SidebarProps {
   onClearAllRecentInboxes?: () => void
   onOpenLockModal: () => void
   onRemoveLock: () => void
+  onGenerateRandomInbox?: () => void
   darkMode: boolean
   onToggleDarkMode: () => void
 }
@@ -25,136 +35,130 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onClearAllRecentInboxes,
   onOpenLockModal,
   onRemoveLock,
-  darkMode,
-  onToggleDarkMode,
+  onGenerateRandomInbox,
 }) => {
-  const [newInboxInput, setNewInboxInput] = useState('')
+  const [searchInput, setSearchInput] = useState('')
+
+  const filteredInboxes = recentInboxes.filter((name) =>
+    name.toLowerCase().includes(searchInput.toLowerCase())
+  )
 
   const handleCreateOrJump = (e: React.FormEvent) => {
     e.preventDefault()
-    if (newInboxInput.trim()) {
-      // Strip bagian @domain jika user mengetik email lengkap (sutrisno@gmail → sutrisno)
-      const raw = newInboxInput.trim().toLowerCase()
+    if (searchInput.trim()) {
+      const raw = searchInput.trim().toLowerCase()
       const atIndex = raw.indexOf('@')
       const clean = atIndex > 0 ? raw.slice(0, atIndex) : raw
       if (clean) {
         onSelectInbox(clean)
-        setNewInboxInput('')
+        setSearchInput('')
       }
     }
   }
 
   return (
-    <div className="flex flex-col h-full p-4">
-      {/* Brand Header */}
-      <div className="flex items-center gap-3 px-2 py-3 mb-2">
-        <img
-          src="/quickbox-icon.svg"
-          alt="Quick-Box Logo"
-          className="w-10 h-10 rounded-xl shadow-md shrink-0 object-contain"
-        />
-        <div>
-          <h1 className="font-bold text-base leading-tight tracking-tight">Quick-Box</h1>
-          <p className="text-xs text-slate-400">Developer Temporary Inbox</p>
+    <div className="flex flex-col h-full p-3.5 justify-between">
+      {/* Top Header & New Generation Button */}
+      <div>
+        <div className="flex items-center justify-between mb-2 px-1">
+          <div>
+            <h2 className="font-bold text-sm text-slate-900 dark:text-white leading-tight">
+              Riwayat Inbox
+            </h2>
+            <p className="text-[11px] text-slate-400">Generated Mailboxes</p>
+          </div>
+          <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500">
+            {recentInboxes.length} Total
+          </span>
         </div>
-      </div>
 
-      {/* Jump to Inbox Form */}
-      <form onSubmit={handleCreateOrJump} className="my-3">
-        <div className="relative flex items-center">
+        {/* Generate / New Address Action */}
+        <Button
+          onClick={onGenerateRandomInbox}
+          size="sm"
+          className="w-full justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs py-2 rounded-xl mb-3 shadow-xs cursor-pointer"
+        >
+          <Sparkles className="w-3.5 h-3.5" />
+          <span>Generate New Address</span>
+        </Button>
+
+        {/* Search / Jump Input */}
+        <form onSubmit={handleCreateOrJump} className="relative mb-3">
+          <Search className="w-3.5 h-3.5 absolute left-3 top-2.5 text-slate-400" />
           <input
             type="text"
-            value={newInboxInput}
-            onChange={(e) => setNewInboxInput(e.target.value)}
-            placeholder="Ketik nama atau email..."
-            className="w-full pl-3 pr-10 py-2 text-xs rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 focus:outline-none focus:ring-2 focus:ring-slate-400 transition"
+            value={searchInput}
+            onChange={(e) => setSearchInput(e.target.value)}
+            placeholder="Cari sesi alamat / label..."
+            className="w-full pl-8 pr-3 py-1.5 text-xs rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0B0F19] text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-1 focus:ring-blue-500 transition"
           />
-          <button
-            type="submit"
-            className="absolute right-1.5 p-1 rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 cursor-pointer"
-            title="Buka Inbox"
-          >
-            <ArrowRight className="w-4 h-4" />
-          </button>
-        </div>
-      </form>
+        </form>
 
-      {/* Current Inbox Status Box */}
-      <div className="p-3 my-2 rounded-xl bg-slate-50 dark:bg-slate-950/50 border border-slate-200 dark:border-slate-800/80">
-        <div className="flex items-center justify-between mb-1">
-          <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Inbox Aktif</span>
-          {status?.is_locked ? (
-            <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-rose-500">
-              <Lock className="w-3 h-3" /> Terkunci
+        {/* Active Inbox Card with Lock & Status */}
+        <div className="p-3 rounded-xl bg-white dark:bg-[#0F172A] border border-blue-200 dark:border-blue-950/80 shadow-xs mb-3">
+          <div className="flex items-center justify-between text-[11px] mb-1">
+            <span className="inline-flex items-center gap-1.5 font-semibold text-blue-600 dark:text-blue-400">
+              <span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse" />
+              Aktif (Active)
             </span>
-          ) : (
-            <span className="inline-flex items-center gap-1 text-[11px] font-medium text-emerald-600 dark:text-emerald-400">
-              <Unlock className="w-3 h-3" /> Publik
+            <span className="text-[10px] px-1.5 py-0.5 rounded bg-blue-50 dark:bg-blue-950 text-blue-600 dark:text-blue-400 font-medium">
+              Sesi Utama
             </span>
-          )}
-        </div>
-        <p className="font-bold text-sm text-slate-900 dark:text-slate-100 truncate mb-2.5">
-          {currentInbox}
-        </p>
-
-        {status?.is_locked ? (
-          <Button
-            size="sm"
-            variant="outline"
-            className="w-full text-xs"
-            onClick={onRemoveLock}
-          >
-            <Unlock className="w-3.5 h-3.5" /> Buka Kunci Sandi
-          </Button>
-        ) : (
-          <Button
-            size="sm"
-            variant="secondary"
-            className="w-full text-xs"
-            onClick={onOpenLockModal}
-          >
-            <Lock className="w-3.5 h-3.5" /> Kunci dengan Sandi
-          </Button>
-        )}
-      </div>
-
-      {/* Recent Inboxes List */}
-      <div className="flex-1 overflow-y-auto my-3 pr-1">
-        <div className="flex items-center justify-between px-2 mb-2">
-          <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
-            <Clock className="w-3.5 h-3.5 text-slate-400" />
-            Riwayat Inbox
-          </span>
-          {recentInboxes.length > 0 && onClearAllRecentInboxes && (
-            <button
-              onClick={onClearAllRecentInboxes}
-              className="text-[10px] text-slate-400 hover:text-rose-500 dark:hover:text-rose-400 transition cursor-pointer flex items-center gap-1"
-              title="Hapus Semua Riwayat"
-            >
-              <Trash2 className="w-3 h-3" />
-              <span>Bersihkan</span>
-            </button>
-          )}
-        </div>
-        {recentInboxes.length === 0 ? (
-          <div className="px-2 py-4 text-center text-xs text-slate-400">
-            Tidak ada riwayat inbox
           </div>
-        ) : (
-          <div className="space-y-1">
-            {recentInboxes.map((name) => {
-              const isCurrent = name === currentInbox
-              return (
-                <div
-                  key={name}
-                  className={`group w-full px-3 py-2 rounded-xl text-xs font-medium transition flex items-center justify-between cursor-pointer ${
-                    isCurrent
-                      ? 'bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-950 font-semibold shadow-xs'
-                      : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
-                  }`}
-                  onClick={() => onSelectInbox(name)}
-                >
-                  <span className="truncate flex-1 text-left">{name}</span>
+
+          <div className="font-bold text-xs text-slate-900 dark:text-slate-100 truncate mb-2">
+            {currentInbox}
+          </div>
+
+          <div className="flex items-center justify-between pt-2 border-t border-slate-100 dark:border-slate-800/80">
+            <span className="text-[10px] text-slate-400 flex items-center gap-1">
+              {status?.is_locked ? (
+                <span className="text-rose-500 flex items-center gap-1 font-medium">
+                  <Lock className="w-3 h-3" /> Terkunci Sandi
+                </span>
+              ) : (
+                <span className="text-emerald-500 flex items-center gap-1 font-medium">
+                  <Unlock className="w-3 h-3" /> Publik (Dev)
+                </span>
+              )}
+            </span>
+
+            {status?.is_locked ? (
+              <button
+                onClick={onRemoveLock}
+                className="text-[11px] font-semibold text-rose-600 hover:underline cursor-pointer"
+              >
+                Buka
+              </button>
+            ) : (
+              <button
+                onClick={onOpenLockModal}
+                className="text-[11px] font-semibold text-blue-600 dark:text-blue-400 hover:underline cursor-pointer"
+              >
+                Kunci
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* Inboxes List */}
+        <div className="overflow-y-auto max-h-[calc(100vh-420px)] space-y-1.5 pr-1">
+          {filteredInboxes.map((name) => {
+            const isCurrent = name === currentInbox
+            return (
+              <div
+                key={name}
+                onClick={() => onSelectInbox(name)}
+                className={`group p-2.5 rounded-xl border text-xs transition cursor-pointer flex flex-col gap-1 ${
+                  isCurrent
+                    ? 'border-blue-500/80 bg-blue-50/50 dark:bg-blue-950/20 shadow-xs'
+                    : 'border-slate-200/60 dark:border-slate-800/60 bg-white dark:bg-[#0F172A] hover:border-slate-300 dark:hover:border-slate-700'
+                }`}
+              >
+                <div className="flex items-center justify-between">
+                  <span className="font-semibold truncate text-slate-900 dark:text-slate-200">
+                    {name}
+                  </span>
                   {onRemoveRecentInbox && (
                     <button
                       type="button"
@@ -162,36 +166,52 @@ export const Sidebar: React.FC<SidebarProps> = ({
                         e.stopPropagation()
                         onRemoveRecentInbox(name)
                       }}
-                      className={`opacity-0 group-hover:opacity-100 p-0.5 rounded transition cursor-pointer shrink-0 ml-1.5 ${
-                        isCurrent
-                          ? 'hover:bg-slate-800 text-slate-300 hover:text-white dark:hover:bg-slate-200 dark:text-slate-700 dark:hover:text-slate-950'
-                          : 'hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-400 hover:text-rose-500'
-                      }`}
-                      title={`Hapus ${name} dari riwayat`}
+                      className="opacity-0 group-hover:opacity-100 p-0.5 rounded text-slate-400 hover:text-rose-500 transition cursor-pointer"
+                      title="Hapus sesi"
                     >
-                      <X className="w-3.5 h-3.5" />
+                      <X className="w-3 h-3" />
                     </button>
                   )}
                 </div>
-              )
-            })}
-          </div>
-        )}
+                <div className="flex items-center justify-between text-[10px] text-slate-400">
+                  <span>Tersimpan di browser</span>
+                  {isCurrent && <span className="font-bold text-blue-600">Dipilih</span>}
+                </div>
+              </div>
+            )
+          })}
+        </div>
       </div>
 
-      {/* Footer Info & Dark Mode */}
-      <div className="pt-3 border-t border-slate-100 dark:border-slate-800/80 flex items-center justify-between text-xs text-slate-400">
-        <div className="flex items-center gap-1.5 text-[11px]">
-          <Shield className="w-3.5 h-3.5 text-emerald-500" />
-          <span>Retensi 30 Hari</span>
+      {/* Bottom Capacity & Privacy Card */}
+      <div className="space-y-3 pt-3 border-t border-slate-200/80 dark:border-slate-800/80">
+        <div className="p-2.5 rounded-xl border border-slate-200/70 dark:border-slate-800 bg-white dark:bg-[#0F172A] text-[11px]">
+          <div className="flex items-center justify-between mb-1 text-slate-500">
+            <span className="flex items-center gap-1 font-semibold text-[10px] uppercase">
+              <HardDrive className="w-3 h-3" /> Kapasitas Sesi Lokal
+            </span>
+            <span>{recentInboxes.length} / 10 Max</span>
+          </div>
+          <div className="flex items-center justify-between text-[10px] text-slate-400 mt-2">
+            <span>Auto-purge 30 Hari</span>
+            {onClearAllRecentInboxes && recentInboxes.length > 0 && (
+              <button
+                onClick={onClearAllRecentInboxes}
+                className="text-rose-500 hover:underline cursor-pointer flex items-center gap-1 font-medium"
+              >
+                <Trash2 className="w-2.5 h-2.5" /> Hapus Semua
+              </button>
+            )}
+          </div>
         </div>
-        <button
-          onClick={onToggleDarkMode}
-          className="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 cursor-pointer transition"
-          title="Ganti Tema"
-        >
-          {darkMode ? <Sun className="w-4 h-4 text-amber-400" /> : <Moon className="w-4 h-4" />}
-        </button>
+
+        <div className="p-2.5 rounded-xl bg-slate-100/70 dark:bg-slate-900/40 text-[10px] text-slate-500 dark:text-slate-400 leading-relaxed">
+          <div className="flex items-center gap-1 text-slate-700 dark:text-slate-300 font-semibold mb-0.5">
+            <ShieldCheck className="w-3 h-3 text-emerald-500" />
+            <span>Privasi Terjamin</span>
+          </div>
+          Pesan masuk dianalisis secara lokal tanpa tracking pihak ketiga. Kode OTP diekstrak otomatis.
+        </div>
       </div>
     </div>
   )
