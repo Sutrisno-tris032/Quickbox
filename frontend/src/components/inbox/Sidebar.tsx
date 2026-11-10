@@ -45,7 +45,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
       {/* Brand Header */}
       <div className="flex items-center gap-3 px-2 py-3 mb-2">
         <img
-          src="/favicon.svg"
+          src="/quickbox-icon.svg"
           alt="Quick-Box Logo"
           className="w-10 h-10 rounded-xl shadow-md shrink-0 object-contain"
         />
