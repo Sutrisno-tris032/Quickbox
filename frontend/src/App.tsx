@@ -78,6 +78,21 @@ export function App() {
     })
   }, [])
 
+  // Remove single inbox from recent history
+  const handleRemoveRecentInbox = useCallback((nameToRemove: string) => {
+    setRecentInboxes((prev) => {
+      const next = prev.filter((i) => i !== nameToRemove)
+      localStorage.setItem('qb_recent_inboxes', JSON.stringify(next))
+      return next
+    })
+  }, [])
+
+  // Clear all recent history
+  const handleClearAllRecentInboxes = useCallback(() => {
+    setRecentInboxes([])
+    localStorage.removeItem('qb_recent_inboxes')
+  }, [])
+
   // Realtime SSE event listener
   useRealtimeEvents(
     currentInbox,
@@ -114,6 +129,8 @@ export function App() {
             status={status}
             recentInboxes={recentInboxes}
             onSelectInbox={handleSelectInbox}
+            onRemoveRecentInbox={handleRemoveRecentInbox}
+            onClearAllRecentInboxes={handleClearAllRecentInboxes}
             onOpenLockModal={() => setLockModal({ isOpen: true, mode: 'lock' })}
             onRemoveLock={removeLock}
             darkMode={darkMode}
