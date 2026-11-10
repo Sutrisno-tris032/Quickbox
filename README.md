@@ -127,6 +127,7 @@ Untuk pengujian aplikasi yang sedang Anda bangun di laptop lokal tanpa VPS:
 | ----------------- | ---------------------- | --------------------------------------------------------------- |
 | `DOMAIN`          | `quickbox.dev`         | Domain utama layanan (email ke domain lain ditolak di SMTP 550) |
 | `SMTP_PORT`       | `25`                   | Port listener penerima email SMTP                               |
+| `ENABLE_SMTP`     | `true`                 | Set `false` untuk nonaktifkan SMTP listener (pakai Cloudflare Worker) |
 | `HTTP_PORT`       | `8080`                 | Port HTTP Web UI & REST/SSE API                                 |
 | `DATABASE_URL`    | `sqlite://quickbox.db` | URL koneksi basis data SQLite                                   |
 | `ATTACHMENTS_DIR` | `./data/attachments`   | Direktori penyimpanan berkas lampiran                           |
@@ -157,11 +158,23 @@ quick-box/
 │   │   └── hooks/                   # useInbox & useRealtimeEvents (SSE)
 ├── docs/
 │   ├── design/                      # Aset prototipe interaktif & gambar referensi UI
+│   ├── cloudflare-setup.md          # 📖 Panduan lengkap self-host via Cloudflare Email Worker + Tunnel
 │   └── superpowers/
 │       ├── specs/                   # Dokumen desain arsitektur teknis
 │       └── plans/                   # Rencana eksekusi implementasi TDD
+├── cloudflare/
+│   ├── email-worker.js              # Template Cloudflare Email Worker (forward SMTP → HTTP)
+│   └── tunnel-config.yml            # Template konfigurasi Cloudflare Tunnel
 └── PRD.md                           # Dokumen spesifikasi kebutuhan produk (PRD)
 ```
+
+---
+
+## 🏠 Self-Host di Home Server via Cloudflare (Tanpa VPS, Tanpa Port Forwarding)
+
+Quick-Box mendukung penerimaan email langsung dari Gmail/Outlook di home server rumahan menggunakan **Cloudflare Email Routing + Email Worker + Cloudflare Tunnel** — tanpa memerlukan IP statis, tanpa port 25 terbuka di router rumah.
+
+📖 **Baca panduan lengkapnya di [`docs/cloudflare-setup.md`](./docs/cloudflare-setup.md)**
 
 ---
 

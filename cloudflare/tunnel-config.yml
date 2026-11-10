@@ -1,0 +1,27 @@
+# Cloudflare Tunnel — Quick-Box Home Server Configuration
+#
+# Panduan penggunaan:
+#   1. Install cloudflared: https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/downloads/
+#   2. Autentikasi: cloudflared tunnel login
+#   3. Buat tunnel: cloudflared tunnel create quickbox
+#   4. Salin UUID yang muncul ke field "tunnel" di bawah
+#   5. Jalankan: cloudflared tunnel --config cloudflare/tunnel-config.yml run
+#
+# Referensi: https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/
+
+tunnel: <GANTI-DENGAN-UUID-TUNNEL-ANDA>
+credentials-file: /home/user/.cloudflared/<GANTI-DENGAN-UUID-TUNNEL-ANDA>.json
+
+ingress:
+  # Quick-Box Web UI & REST API + webhook endpoint
+  - hostname: quickbox.domainanda.com
+    service: http://localhost:8080
+    originRequest:
+      # Timeout lebih panjang untuk SSE (Server-Sent Events) realtime
+      proxyConnectTimeout: 10s
+      tcpKeepAlive: 30s
+      keepAliveTimeout: 90s
+
+  # Fallback wajib (jangan dihapus)
+  - service: http_status:404
+
