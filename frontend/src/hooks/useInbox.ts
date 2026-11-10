@@ -148,8 +148,9 @@ export function useInbox(inboxName: string) {
     unlock,
     removeLock,
     clearMessages,
-    /** Optimistically mark a message as read in local state (no server round-trip needed
-     *  because GET /messages/:id already sets is_read=1 on the backend). */
+    /** Mark a message as read: updates local state immediately, and calls
+     *  GET /messages/:id so the backend persists is_read=1 (it sets this as a
+     *  side effect of fetching a single message). */
     markRead: useCallback((messageId: string) => {
       setMessages((prev) =>
         prev.map((m) => (m.id === messageId ? { ...m, is_read: true } : m))
@@ -162,7 +163,16 @@ export function useInbox(inboxName: string) {
           unread_messages: Math.max(0, prev.unread_messages - 1),
         }
       })
-    }, []),
+
+      const token = getToken()
+      const headers: Record<string, string> = {}
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`
+      }
+      fetch(`/api/inboxes/${encodeURIComponent(inboxName)}/messages/${encodeURIComponent(messageId)}`, { headers }).catch(
+        (e) => console.error('Failed to persist read status', e)
+      )
+    }, [inboxName, getToken]),
   }
 }
 

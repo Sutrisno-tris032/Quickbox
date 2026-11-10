@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { AppLayout } from './components/layout/AppLayout'
-import { TopNavbar, MailboxNav } from './components/layout/TopNavbar'
+import { TopNavbar } from './components/layout/TopNavbar'
 import { Sidebar } from './components/inbox/Sidebar'
 import { MessageList } from './components/inbox/MessageList'
 import { MessageDetail } from './components/viewer/MessageDetail'
@@ -138,7 +138,6 @@ export function App() {
             <span>Audio Alert: <strong>Off</strong></span>
           </div>
         }
-        mailboxNav={<MailboxNav activeSession={currentInbox} />}
         sidebar={
           <Sidebar
             currentInbox={currentInbox}

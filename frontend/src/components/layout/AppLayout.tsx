@@ -3,7 +3,6 @@ import React from 'react'
 export interface AppLayoutProps {
   topNavbar?: React.ReactNode
   statusBar?: React.ReactNode
-  mailboxNav: React.ReactNode
   sidebar: React.ReactNode
   list: React.ReactNode
   detail: React.ReactNode
@@ -13,7 +12,6 @@ export interface AppLayoutProps {
 export const AppLayout: React.FC<AppLayoutProps> = ({
   topNavbar,
   statusBar,
-  mailboxNav,
   sidebar,
   list,
   detail,
@@ -37,17 +35,12 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
 
       {/* 3. Main Multi-Column Workspace */}
       <div className="flex flex-1 min-h-0 overflow-hidden">
-        {/* Rail Column 1: Mailbox Types / Categories */}
-        <aside className="hidden lg:flex w-52 flex-col border-r border-slate-200/80 dark:border-slate-800/80 bg-white dark:bg-[#0F172A] shrink-0 select-none">
-          {mailboxNav}
-        </aside>
-
-        {/* Rail Column 2: Riwayat Inbox (Generated Mailboxes) */}
+        {/* Rail Column 1: Riwayat Inbox (Generated Mailboxes) */}
         <aside className="hidden md:flex w-64 xl:w-72 flex-col border-r border-slate-200/80 dark:border-slate-800/80 bg-[#FBFBFC] dark:bg-[#0D1322] shrink-0 select-none">
           {sidebar}
         </aside>
 
-        {/* Rail Column 3: Pesan Masuk (Message List) */}
+        {/* Rail Column 2: Pesan Masuk (Message List) */}
         <section
           className={`w-full md:w-80 lg:w-88 xl:w-96 flex flex-col border-r border-slate-200/80 dark:border-slate-800/80 bg-white dark:bg-[#0F172A] shrink-0 ${
             isReadingMobile ? 'hidden md:flex' : 'flex'
@@ -56,7 +49,7 @@ export const AppLayout: React.FC<AppLayoutProps> = ({
           {list}
         </section>
 
-        {/* Rail Column 4: Reader & Action Panel (Message Detail) */}
+        {/* Rail Column 3: Reader & Action Panel (Message Detail) */}
         <main
           className={`flex-1 flex flex-col min-w-0 bg-[#F8FAFC] dark:bg-[#0B0F19] overflow-hidden ${
             !isReadingMobile ? 'hidden md:flex' : 'flex'

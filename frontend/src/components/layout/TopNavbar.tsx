@@ -1,6 +1,5 @@
 import React from 'react'
 import {
-  Inbox,
   Globe,
   Moon,
   Sun,
@@ -61,47 +60,6 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({
         >
           {darkMode ? <Sun className="w-4 h-4 text-amber-400" /> : <Moon className="w-4 h-4" />}
         </button>
-      </div>
-    </div>
-  )
-}
-
-export interface MailboxNavProps {
-  activeSession: string
-  onSelectCategory?: (cat: string) => void
-}
-
-export const MailboxNav: React.FC<MailboxNavProps> = () => {
-  return (
-    <div className="flex flex-col h-full p-3 justify-between">
-      <div>
-        <div className="px-2 py-2 flex items-center justify-between text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-1">
-          <span>Mailboxes</span>
-          <span className="bg-blue-50 dark:bg-blue-950/50 text-blue-600 dark:text-blue-400 px-1.5 py-0.5 rounded text-[10px]">
-            Active
-          </span>
-        </div>
-
-        <div className="space-y-1">
-          <button className="w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 transition cursor-pointer">
-            <div className="flex items-center gap-2.5">
-              <Inbox className="w-4 h-4" />
-              <span>Primary Session</span>
-            </div>
-            <span className="w-2 h-2 rounded-full bg-blue-600" />
-          </button>
-        </div>
-      </div>
-
-      {/* Bottom TTL Clock Widget */}
-      <div className="p-3 rounded-xl border border-slate-200/80 dark:border-slate-800/80 bg-slate-50 dark:bg-slate-900/40">
-        <div className="flex items-center justify-between text-[10px] font-semibold text-slate-400 uppercase mb-1.5">
-          <span>TTL Session Clock</span>
-          <span className="font-mono text-blue-600 dark:text-blue-400">Active</span>
-        </div>
-        <div className="w-full h-1.5 bg-slate-200 dark:bg-slate-800 rounded-full overflow-hidden">
-          <div className="w-3/4 h-full bg-gradient-to-r from-blue-500 to-indigo-600 rounded-full" />
-        </div>
       </div>
     </div>
   )
