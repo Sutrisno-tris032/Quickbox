@@ -23,17 +23,19 @@ export const SandboxedHtmlFrame: React.FC<SandboxedHtmlFrameProps> = ({ html, in
     }
 
     // Inline images (from cid: attachments) point at our own attachment endpoint,
-    // not a third-party host, so they're always shown — but if the inbox is locked,
-    // the <img> request needs the session token to pass auth, same as attachment downloads.
-    if (inboxName) {
-      const token = sessionStorage.getItem(`qb_token_${inboxName.toLowerCase()}`)
-      if (token) {
-        sanitized = sanitized.replace(
-          /(src=["'])(\/api\/inboxes\/[^"']+\/attachments\/[^"'?]+)(["'])/gi,
-          (_match, prefix, path, suffix) => `${prefix}${path}?token=${encodeURIComponent(token)}${suffix}`
-        )
+    // not a third-party host, so they're always shown. The iframe uses srcDoc inside a
+    // sandbox without allow-same-origin, so relative URLs never resolve to anything
+    // fetchable — they must be rewritten to absolute URLs. If the inbox is locked, the
+    // session token is appended too, same as attachment downloads.
+    const token = inboxName ? sessionStorage.getItem(`qb_token_${inboxName.toLowerCase()}`) : null
+    sanitized = sanitized.replace(
+      /(src=["'])(\/api\/inboxes\/[^"']+\/attachments\/[^"'?]+)(["'])/gi,
+      (_match, prefix, path, suffix) => {
+        const absoluteUrl = `${window.location.origin}${path}`
+        const withToken = token ? `${absoluteUrl}?token=${encodeURIComponent(token)}` : absoluteUrl
+        return `${prefix}${withToken}${suffix}`
       }
-    }
+    )
 
     // Add basic clean styling to HTML email inside iframe
     const styleHeader = `

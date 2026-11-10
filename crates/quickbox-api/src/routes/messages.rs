@@ -170,7 +170,16 @@ pub async fn download_attachment(
     let stream = ReaderStream::new(file);
     let body = Body::from_stream(stream);
 
-    let content_disposition = format!("attachment; filename=\"{}\"", attachment.filename);
+    // Images are served inline so they can render directly inside <img> tags
+    // (e.g. inline cid: images in an email body). The frontend's download links
+    // already force a save-to-disk via the HTML `download` attribute, so this
+    // doesn't affect the "Lampiran Berkas" download UX.
+    let disposition_kind = if attachment.content_type.starts_with("image/") {
+        "inline"
+    } else {
+        "attachment"
+    };
+    let content_disposition = format!("{}; filename=\"{}\"", disposition_kind, attachment.filename);
 
     let response = Response::builder()
         .header(header::CONTENT_TYPE, attachment.content_type)
