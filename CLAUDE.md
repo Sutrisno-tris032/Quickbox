@@ -5,21 +5,20 @@ Panduan ini berlaku untuk seluruh repo. Rujukan lengkap kebutuhan produk ada di 
 ## Struktur repo
 
 ```
-backend/   # Go: server SMTP + API + realtime dalam satu proses
+crates/    # Rust workspace: quickbox-core, quickbox-smtp, quickbox-api, quickbox-app
 frontend/  # React: web inbox
-deploy/    # Docker / docker compose untuk pemasangan
 docs/      # desain, riset, keputusan tambahan
 ```
 
-Satu komponen, satu tempat. Jangan campur kode Go dan React di luar folder masing-masing.
+Satu komponen, satu tempat. Jangan campur kode Rust dan React di luar folder masing-masing. `Dockerfile` dan `docker-compose.yml` ada di root repo (bukan folder `deploy/`).
 
 ## Stack dan keputusan teknis terkunci (lihat PRD bagian 9)
 
-- **Backend:** Go. SMTP + HTTP API + realtime (WebSocket/SSE) berjalan dalam satu proses/binary.
+- **Backend:** Rust (Tokio + Axum). SMTP + HTTP API + realtime (Server-Sent Events) berjalan dalam satu proses/binary (`quickbox-app`), dipecah per crate domain: `quickbox-core`, `quickbox-smtp`, `quickbox-api`.
 - **Frontend:** React.
 - **Database:** SQLite untuk tahap awal (migrasi ke PostgreSQL hanya jika benar-benar perlu — jangan desain ulang skema demi ini sebelum diperlukan).
 - **Lampiran:** disimpan di disk lokal pada MVP.
-- **Pemasangan:** satu binary backend + satu image Docker (`deploy/`).
+- **Pemasangan:** satu binary backend + satu image Docker (`Dockerfile`, `docker-compose.yml`).
 - **Model data:** email disimpan sebagai bagian dari *thread*, dengan kolom `direction` (`in`/`out`) sejak awal — supaya fitur balasan nanti tidak perlu mengubah skema. Jangan hilangkan kolom ini meski belum dipakai.
 
 ## Prinsip kerja dengan AI
@@ -41,12 +40,12 @@ Satu komponen, satu tempat. Jangan campur kode Go dan React di luar folder masin
 - Penanganan kata sandi dan sesi: tidak ada kebocoran hash/plaintext, perbandingan sandi memakai fungsi yang aman terhadap timing attack.
 - Sanitasi dan pengisolasian isi email: HTML dirender di iframe `sandbox` tanpa script, sumber daya jarak jauh (gambar, dll.) diblokir default.
 - Batas input: ukuran email/lampiran, jumlah email per inbox, laju permintaan per IP.
-- Dependensi baru: periksa kebutuhan, lisensi, dan reputasi sebelum ditambahkan ke `go.mod`/`package.json`.
+- Dependensi baru: periksa kebutuhan, lisensi, dan reputasi sebelum ditambahkan ke `Cargo.toml`/`package.json`.
 - Klaim yang tidak bisa diverifikasi: jangan percaya referensi ke fungsi atau API yang tidak benar-benar ada — cek langsung di kode/dokumentasi resmi.
 
 ## Konvensi kode
 
-- **Go:** `gofmt`/`go vet` bersih sebelum commit. Error ditangani secara eksplisit, tidak di-swallow. Package per domain (misalnya `internal/inbox`, `internal/mail`), bukan per jenis file.
+- **Rust:** `cargo fmt`/`cargo clippy` bersih sebelum commit. Error ditangani secara eksplisit (`Result`, tidak `.unwrap()` di luar tes), tidak di-swallow. Crate per domain (`quickbox-core`, `quickbox-smtp`, `quickbox-api`), bukan per jenis file.
 - **Tes:** tes menyertai perubahan pada perilaku di atas (kunci sandi, retensi, pembatasan, sanitasi HTML) — bukan opsional.
 - **Tidak menyimpan data pribadi yang tidak perlu** di log; log tidak boleh menyimpan isi email (lihat PRD bagian 8, baris Privasi).
 

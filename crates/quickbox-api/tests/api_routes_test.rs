@@ -19,6 +19,8 @@ async fn test_inbox_lock_unlock_flow() {
         attachments_dir: temp_dir.path().to_path_buf(),
         broadcast_tx: Arc::new(tx),
         jwt_secret: "test-secret-key-at-least-32-chars-long".to_string(),
+        domain: "quickbox.dev".to_string(),
+        inbound_secret: None,
     };
 
     let app = create_app(state);
@@ -170,6 +172,8 @@ async fn test_attachment_idor_and_authenticated_download() {
         attachments_dir: temp_dir.path().to_path_buf(),
         broadcast_tx: Arc::new(tx),
         jwt_secret: "test-secret-key-at-least-32-chars-long".to_string(),
+        domain: "quickbox.dev".to_string(),
+        inbound_secret: None,
     };
 
     let app = create_app(state);

@@ -33,6 +33,8 @@ async fn main() -> Result<()> {
     let jwt_secret = env::var("JWT_SECRET").unwrap_or_else(|_| "quickbox-default-insecure-secret-key-change-in-prod".to_string());
     let retention_days: i64 = env::var("RETENTION_DAYS").unwrap_or_else(|_| "30".to_string()).parse()?;
     let frontend_dist = PathBuf::from(env::var("FRONTEND_DIST").unwrap_or_else(|_| "./frontend/dist".to_string()));
+    // Nonaktif (endpoint /internal/inbound -> 404) kecuali operator menyetelnya secara eksplisit.
+    let inbound_secret = env::var("INBOUND_SECRET").ok();
 
     tokio::fs::create_dir_all(&attachments_dir).await?;
 
@@ -76,6 +78,8 @@ async fn main() -> Result<()> {
         attachments_dir,
         broadcast_tx,
         jwt_secret,
+        domain,
+        inbound_secret,
     };
 
     let api_app = create_app(state);

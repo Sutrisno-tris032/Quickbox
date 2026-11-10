@@ -133,6 +133,7 @@ Untuk pengujian aplikasi yang sedang Anda bangun di laptop lokal tanpa VPS:
 | `FRONTEND_DIST`   | `./frontend/dist`      | Lokasi berkas static build React                                |
 | `RETENTION_DAYS`  | `30`                   | Batas retensi email dan pelepasan kunci tidak aktif (hari)      |
 | `JWT_SECRET`      | _(string acak)_        | Kunci rahasia HMAC penandatanganan token sesi inbox             |
+| `INBOUND_SECRET`  | _(kosong = nonaktif)_  | Rahasia bersama untuk `POST /internal/inbound` (webhook penerima email dari Cloudflare Email Worker, dipakai saat SMTP langsung tidak memungkinkan misal di belakang CGNAT). Endpoint mengembalikan 404 selama variabel ini tidak diset. |
 
 ---
 

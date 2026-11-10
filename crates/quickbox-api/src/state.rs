@@ -10,5 +10,9 @@ pub struct AppState {
     pub attachments_dir: PathBuf,
     pub broadcast_tx: Arc<broadcast::Sender<NewMailNotification>>,
     pub jwt_secret: String,
+    pub domain: String,
+    /// Rahasia bersama dengan Cloudflare Email Worker untuk endpoint `/internal/inbound`.
+    /// `None` berarti endpoint tersebut nonaktif (mengembalikan 404).
+    pub inbound_secret: Option<String>,
 }
 

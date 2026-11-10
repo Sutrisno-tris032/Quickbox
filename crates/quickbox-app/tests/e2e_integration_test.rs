@@ -36,6 +36,8 @@ async fn test_full_e2e_monolith_flow() {
         attachments_dir: temp_dir.path().to_path_buf(),
         broadcast_tx: broadcast_tx.clone(),
         jwt_secret: "secret-key-for-e2e-testing-purposes".to_string(),
+        domain: "quickbox.dev".to_string(),
+        inbound_secret: None,
     };
     let app = create_app(state);
 

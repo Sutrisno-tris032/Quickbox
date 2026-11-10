@@ -125,7 +125,7 @@ impl SmtpConnection {
                 
                 // Validate domain
                 if let Some((_local, rcpt_domain)) = clean_rcpt.split_once('@') {
-                    if rcpt_domain == self.domain || self.domain == "localhost" || self.domain == "127.0.0.1" {
+                    if crate::domain::accepts_recipient_domain(&self.domain, rcpt_domain) {
                         rcpt_to.push(clean_rcpt);
                         writer.write_all(b"250 2.1.5 Recipient OK\r\n").await?;
                     } else {

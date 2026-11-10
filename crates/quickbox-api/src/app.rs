@@ -1,11 +1,14 @@
-use crate::routes::{events, inboxes, messages};
+use crate::routes::{events, inboxes, ingest, messages};
 use crate::state::AppState;
 use axum::{
+    extract::DefaultBodyLimit,
     routing::{delete, get, post},
     Router,
 };
 use tower_http::cors::{Any, CorsLayer};
 use tower_http::trace::TraceLayer;
+
+const INBOUND_WEBHOOK_MAX_BYTES: usize = 10 * 1024 * 1024;
 
 pub fn create_app(state: AppState) -> Router {
     let cors = CorsLayer::new()
@@ -32,6 +35,10 @@ pub fn create_app(state: AppState) -> Router {
             get(messages::download_attachment),
         )
         .route("/api/inboxes/{name}/events", get(events::stream_events))
+        .route(
+            "/internal/inbound",
+            post(ingest::inbound).layer(DefaultBodyLimit::max(INBOUND_WEBHOOK_MAX_BYTES)),
+        )
         .layer(cors)
         .layer(TraceLayer::new_for_http())
         .with_state(state)

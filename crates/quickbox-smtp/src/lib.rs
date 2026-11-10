@@ -1,4 +1,5 @@
 pub mod connection;
+pub mod domain;
 pub mod extractor;
 pub mod ingest;
 pub mod parser;
