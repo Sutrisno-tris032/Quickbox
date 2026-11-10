@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { Mail, Clock, Shield, Lock, Unlock, Moon, Sun, ArrowRight } from 'lucide-react'
+import { Clock, Shield, Lock, Unlock, Moon, Sun, ArrowRight } from 'lucide-react'
 import { Button } from '../ui/Button'
 import type { InboxStatus } from '../../types'
 
@@ -44,9 +44,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
     <div className="flex flex-col h-full p-4">
       {/* Brand Header */}
       <div className="flex items-center gap-3 px-2 py-3 mb-2">
-        <div className="w-10 h-10 rounded-xl bg-slate-950 dark:bg-white text-white dark:text-slate-950 flex items-center justify-center font-black text-xl shadow-md">
-          <Mail className="w-5 h-5" />
-        </div>
+        <img
+          src="/favicon.svg"
+          alt="Quick-Box Logo"
+          className="w-10 h-10 rounded-xl shadow-md shrink-0 object-contain"
+        />
         <div>
           <h1 className="font-bold text-base leading-tight tracking-tight">Quick-Box</h1>
           <p className="text-xs text-slate-400">Developer Temporary Inbox</p>

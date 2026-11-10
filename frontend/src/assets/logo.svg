@@ -1,0 +1,25 @@
+<svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="qbGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#4F46E5" />
+      <stop offset="50%" stop-color="#3B82F6" />
+      <stop offset="100%" stop-color="#06B6D4" />
+    </linearGradient>
+    <linearGradient id="boltGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FDE047" />
+      <stop offset="100%" stop-color="#F59E0B" />
+    </linearGradient>
+    <filter id="shadow" x="-10%" y="-10%" width="130%" height="130%">
+      <feDropShadow dx="0" dy="4" stdDeviation="4" flood-color="#4F46E5" flood-opacity="0.35"/>
+    </filter>
+  </defs>
+  <!-- Main Rounded Box -->
+  <rect x="4" y="4" width="56" height="56" rx="16" fill="url(#qbGrad)" filter="url(#shadow)"/>
+  
+  <!-- Envelope Outline / Flap -->
+  <path d="M16 23C16 21.8954 16.8954 21 18 21H46C47.1046 21 48 21.8954 48 23V41C48 42.1046 47.1046 43 46 43H18C16.8954 43 16 42.1046 16 41V23Z" stroke="white" stroke-width="2.5" stroke-opacity="0.9" fill="white" fill-opacity="0.08"/>
+  <path d="M16 23L32 34L48 23" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+  
+  <!-- Lightning Bolt (Quick) Badge in center/bottom -->
+  <path d="M34 22L24 35H32L29 44L41 30H33L36 22H34Z" fill="url(#boltGrad)" stroke="white" stroke-width="1.5" stroke-linejoin="round"/>
+</svg>
