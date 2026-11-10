@@ -36,7 +36,8 @@ export const MessageList: React.FC<MessageListProps> = ({
   const [searchQuery, setSearchQuery] = useState('')
   const [copied, setCopied] = useState(false)
 
-  const emailAddress = `${currentInbox}@quickbox.dev`
+  const DOMAIN = import.meta.env.VITE_DOMAIN || 'quickbox.trisatya.my.id'
+  const emailAddress = `${currentInbox}@${DOMAIN}`
 
   const handleCopy = () => {
     navigator.clipboard.writeText(emailAddress)

@@ -29,8 +29,14 @@ export const Sidebar: React.FC<SidebarProps> = ({
   const handleCreateOrJump = (e: React.FormEvent) => {
     e.preventDefault()
     if (newInboxInput.trim()) {
-      onSelectInbox(newInboxInput.trim().toLowerCase())
-      setNewInboxInput('')
+      // Strip bagian @domain jika user mengetik email lengkap (sutrisno@gmail → sutrisno)
+      const raw = newInboxInput.trim().toLowerCase()
+      const atIndex = raw.indexOf('@')
+      const clean = atIndex > 0 ? raw.slice(0, atIndex) : raw
+      if (clean) {
+        onSelectInbox(clean)
+        setNewInboxInput('')
+      }
     }
   }
 
@@ -54,7 +60,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             type="text"
             value={newInboxInput}
             onChange={(e) => setNewInboxInput(e.target.value)}
-            placeholder="Ketik nama inbox..."
+            placeholder="Ketik nama atau email..."
             className="w-full pl-3 pr-10 py-2 text-xs rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 focus:outline-none focus:ring-2 focus:ring-slate-400 transition"
           />
           <button

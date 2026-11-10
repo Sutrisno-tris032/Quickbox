@@ -7,6 +7,16 @@ import { LockModal } from './components/inbox/LockModal'
 import { useInbox } from './hooks/useInbox'
 import { useRealtimeEvents } from './hooks/useRealtimeEvents'
 
+/** Normalisasi nama inbox:
+ * - Strip bagian @domain jika user mengetik email lengkap (mis: sutrisno@gmail.com → sutrisno)
+ * - Lowercase dan trim spasi
+ */
+function normalizeInboxName(raw: string): string {
+  const trimmed = raw.trim().toLowerCase()
+  const atIndex = trimmed.indexOf('@')
+  return atIndex > 0 ? trimmed.slice(0, atIndex) : trimmed
+}
+
 export function App() {
   const [currentInbox, setCurrentInbox] = useState(() => {
     return localStorage.getItem('qb_last_inbox') || 'dev-test'
@@ -50,11 +60,13 @@ export function App() {
     lock,
     unlock,
     removeLock,
+    markRead,
   } = useInbox(currentInbox)
 
   // Switch inbox handler
   const handleSelectInbox = useCallback((name: string) => {
-    const clean = name.trim().toLowerCase()
+    const clean = normalizeInboxName(name)
+    if (!clean) return
     setCurrentInbox(clean)
     setSelectedMessageId(null)
     localStorage.setItem('qb_last_inbox', clean)
@@ -113,7 +125,10 @@ export function App() {
             currentInbox={currentInbox}
             messages={messages}
             selectedMessageId={selectedMessageId}
-            onSelectMessage={(id) => setSelectedMessageId(id)}
+            onSelectMessage={(id) => {
+                setSelectedMessageId(id)
+                markRead(id)
+              }}
             onRefresh={refresh}
             isLoading={isLoading}
             isAuthRequired={isAuthRequired}

@@ -130,6 +130,21 @@ export function useInbox(inboxName: string) {
     lock,
     unlock,
     removeLock,
+    /** Optimistically mark a message as read in local state (no server round-trip needed
+     *  because GET /messages/:id already sets is_read=1 on the backend). */
+    markRead: useCallback((messageId: string) => {
+      setMessages((prev) =>
+        prev.map((m) => (m.id === messageId ? { ...m, is_read: true } : m))
+      )
+      // Also decrement unread count in status
+      setStatus((prev) => {
+        if (!prev) return prev
+        return {
+          ...prev,
+          unread_messages: Math.max(0, prev.unread_messages - 1),
+        }
+      })
+    }, []),
   }
 }
 
